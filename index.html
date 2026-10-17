@@ -146,7 +146,9 @@
   .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
   .sum-row.big{font-weight:800;font-size:.95rem;border-bottom:none;}
   .topbar{position:relative;}
-  .help-btn{position:absolute;top:8px;left:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;}
+  .hv{position:absolute;right:16px;bottom:10px;z-index:3;display:flex;flex-direction:column;align-items:flex-end;gap:12px;}
+  .topbar .hv .version{position:static;}
+  .help-link{border:1px solid rgba(255,255,255,.65);background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:4px 12px;font-size:.78rem;font-weight:700;cursor:pointer;}
   .help-card{text-align:left;max-height:80vh;overflow:auto;max-width:420px;}
   .help-card .help-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   .help-card p,.help-card li{font-size:.88rem;color:#333;white-space:normal;margin-bottom:8px;}
@@ -194,13 +196,12 @@
 <div class="app">
 
   <div class="topbar">
-    <button class="help-btn no-print" onclick="helpOpen()" title="Help">❓</button>
     <h1>PaintQuote <span class="pro">Pro</span></h1>
     <p class="tag">Professional Painting Estimation &amp; Quotation Software</p>
     <div class="poweredby">
       Powered by A.S.M Consultancy Service<br>Chidambaram
     </div>
-    <div class="version">Ver 1.0</div>
+    <div class="hv"><button class="help-link no-print" onclick="helpOpen()">❓ Help</button><div class="version">Ver 1.1</div></div>
   </div>
   <div class="brushstroke"></div>
 
