@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<!-- Last edited by Claude: 17-10-2026 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>A.S.M Consultancy Service — Painting Quotation</title>
+<meta name="theme-color" content="#1a3d8f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="https://asm-cdm.github.io/painting-quotation/asm-favicon.png">
+<link rel="apple-touch-icon" href="https://asm-cdm.github.io/painting-quotation/asm-favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --canvas:#F5F3EE;
+    --ink:#1E2330;
+    --wall:#E7E5DE;
+    --teal:#16213E;
+    --teal-dark:#0B1226;
+    --ochre:#D4A017;
+    --brick:#8C5A1E;
+    --line:#D9D5C9;
+    --white:#FFFFFF;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;font-weight:700;letter-spacing:-0.01em;}
+  .app{max-width:760px;margin:0 auto;padding:0 0 90px;}
+
+  .topbar{background:var(--teal);color:var(--white);padding:20px 20px 22px;position:relative;overflow:hidden;}
+  .topbar::after{
+    content:"";position:absolute;right:-30px;top:-30px;width:160px;height:160px;
+    background:radial-gradient(circle at center, var(--ochre) 0%, transparent 70%);opacity:.35;
+  }
+  .topbar h1{margin:0;font-size:1.6rem;color:var(--white);position:relative;line-height:1.25;}
+  .topbar h1 .pro{color:var(--ochre);}
+  .topbar .sub{margin:1px 0 0;font-size:1.02rem;font-weight:700;color:var(--white);opacity:.95;position:relative;}
+  .topbar .tag{margin:6px 0 0;font-size:.78rem;opacity:.85;position:relative;}
+  .topbar .poweredby{margin-top:10px;font-size:.72rem;opacity:.8;position:relative;font-weight:600;line-height:1.6;}
+  .topbar .poweredby span{color:var(--white);}
+  .topbar .version{position:absolute;right:16px;bottom:10px;font-size:.7rem;opacity:.75;font-weight:600;}
+  .brushstroke{height:6px;background:linear-gradient(90deg,var(--ochre),var(--brick),var(--teal-dark));}
+
+  .tabs{display:flex;gap:6px;padding:14px 16px 0;position:sticky;top:0;background:var(--canvas);z-index:5;}
+  .tab{flex:1;text-align:center;padding:10px 6px;border-radius:10px;font-size:.82rem;font-weight:700;color:var(--teal-dark);background:var(--white);border:1px solid var(--line);cursor:pointer;}
+  .tab.active{background:var(--teal);color:var(--white);border-color:var(--teal);}
+
+  .view{padding:16px 16px 4px;display:none;}
+  .view.active{display:block;}
+
+  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+  .card h3{margin:0 0 12px;font-size:1.05rem;}
+  label{display:block;font-size:.78rem;font-weight:700;color:#6b6558;margin:0 0 4px;text-transform:uppercase;letter-spacing:.03em;}
+  input[type=text],input[type=tel],input[type=number],select,textarea{
+    width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:.95rem;
+    font-family:inherit;background:#FCFAF6;color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--teal);}
+  .field{margin-bottom:12px;}
+  .row2{display:flex;gap:10px;}
+  .row2 > *{flex:1;}
+  .row3{display:flex;gap:10px;}
+  .row3 > *{flex:1;}
+
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn{padding:12px 16px;border-radius:9px;font-weight:700;font-size:.9rem;}
+  .btn-teal{background:var(--teal);color:var(--white);}
+  .btn-teal:active{background:var(--teal-dark);}
+  .btn-ochre{background:var(--ochre);color:#3a2a00;}
+  .btn-outline{background:transparent;border:1.5px solid var(--teal);color:var(--teal);}
+  .btn-danger{background:transparent;border:1.5px solid var(--brick);color:var(--brick);}
+  .btn-ghost{background:transparent;color:#6b6558;font-weight:600;}
+  .btn-block{width:100%;}
+  .btn-sm{padding:7px 10px;font-size:.78rem;border-radius:7px;}
+
+  .swatchbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .swatch{width:14px;height:14px;border-radius:4px;flex:none;}
+  .heading-card{border-left:5px solid var(--ochre);}
+  .heading-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .heading-head .name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem;}
+  .icon-btn{background:none;border:none;color:#8a8371;font-size:1.1rem;padding:4px 6px;}
+  .icon-btn.danger{color:var(--brick);}
+
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.03em;color:#8a8371;padding:6px 4px;border-bottom:1.5px solid var(--line);}
+  td{padding:7px 4px;border-bottom:1px solid var(--line);}
+  td input{padding:7px 6px;font-size:.85rem;}
+  .rowline td{vertical-align:middle;}
+  .sqft-badge{background:var(--wall);padding:4px 8px;border-radius:6px;font-weight:700;font-size:.8rem;white-space:nowrap;}
+
+  .totals{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1.5px dashed var(--line);}
+  .totals .amt{font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;color:var(--teal-dark);}
+
+  .netbar{background:var(--teal-dark);color:var(--white);border-radius:var(--radius);padding:16px 18px;display:flex;justify-content:space-between;align-items:center;margin:6px 0 16px;}
+  .netbar .label{font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.04em;}
+  .netbar .amt{font-family:'Fraunces',serif;font-size:1.6rem;font-weight:700;}
+
+  .empty{text-align:center;padding:40px 20px;color:#8a8371;}
+  .empty .big{font-size:2.2rem;margin-bottom:6px;}
+
+  .quote-item{display:flex;justify-content:space-between;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line);gap:8px;}
+  .quote-item:last-child{border-bottom:none;}
+  .quote-item .who{font-weight:700;}
+  .quote-item .meta{font-size:.78rem;color:#8a8371;}
+  .quote-item .actions{display:flex;gap:4px;flex:none;}
+  .quote-item .actions .btn{padding:6px 8px;font-size:.72rem;}
+
+  .chip{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:700;background:var(--wall);color:var(--teal-dark);margin-right:6px;}
+
+  .doc{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+  .doc-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--ochre);padding-bottom:14px;margin-bottom:16px;}
+  .doc-head .biz h2{margin:0;font-size:1.2rem;color:var(--teal-dark);}
+  .doc-head .biz .who{font-size:.85rem;color:#6b6558;margin-top:2px;}
+  .doc-head .qmeta{text-align:right;font-size:.78rem;color:#8a8371;}
+  .doc-cust{margin-bottom:16px;font-size:.9rem;}
+  .doc-cust b{color:var(--teal-dark);}
+  .doc table{margin-bottom:10px;}
+  .doc-net{display:flex;justify-content:flex-end;gap:20px;font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;color:var(--teal-dark);border-top:2px solid var(--ink);padding-top:10px;margin-top:6px;}
+  .doc-thanks{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line);font-size:.88rem;line-height:1.55;}
+  .doc-thanks .sign{margin-top:10px;font-weight:700;}
+  .doc-worklist{list-style:none;padding:0;margin:0 0 14px;font-size:.88rem;}
+  .doc-worklist li{padding:4px 0;}
+  .doc-worklist li::before{content:"✔ ";color:var(--teal);font-weight:700;}
+  .doc-note{font-size:.78rem;color:#8a8371;margin-bottom:10px;}
+
+  .select-row{display:flex;align-items:center;gap:8px;font-size:.85rem;padding:6px 0;}
+  .select-row input{width:auto;}
+  .select-row label{margin:0;text-transform:none;font-size:.9rem;font-weight:600;color:var(--ink);}
+
+  .ls-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .ls-row:last-child{border-bottom:none;}
+  .ls-row input[type=checkbox]{width:auto;}
+  .ls-row .ls-label{flex:1;font-weight:700;font-size:.9rem;}
+  .ls-row input[type=number]{width:110px;}
+
+  .wd-col-title{font-family:'Fraunces',serif;font-weight:700;font-size:.92rem;color:var(--teal-dark);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--ochre);}
+  .dp{display:flex;gap:6px;} .dp input{flex:1;min-width:0;}
+  .dp-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 10px;font-size:1rem;cursor:pointer;}
+  .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:6px 0;}
+  .dp-d{padding:7px 0;border-radius:6px;font-size:.85rem;cursor:pointer;} .dp-d:hover,.dp-d.sel{background:var(--teal);color:#fff;}
+  .dp-h{font-size:.7rem;font-weight:700;color:#8a8371;padding:4px 0;}
+  .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:.88rem;}
+  .sum-row.big{font-weight:800;font-size:.95rem;border-bottom:none;}
+  .topbar{position:relative;}
+  .help-btn{position:absolute;top:8px;left:8px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;}
+  .help-card{text-align:left;max-height:80vh;overflow:auto;max-width:420px;}
+  .help-card .help-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .help-card p,.help-card li{font-size:.88rem;color:#333;white-space:normal;margin-bottom:8px;}
+  .help-card ul{padding-left:18px;margin-bottom:8px;}
+  #voBanner{display:none;background:#8a5a00;color:#fff;padding:8px 12px;font-size:.85rem;text-align:center;}
+  #voBanner button{margin-left:8px;}
+  body.viewonly #voBanner{display:block;}
+  body.viewonly [data-tab="new"], body.viewonly .fin-row, body.viewonly #labourFormCard,
+  body.viewonly #lbBox-rec .row2, body.viewonly #lbBox-rec .field, body.viewonly #lbBox-rec .footer-actions,
+  body.viewonly #lbBox-mat .row2, body.viewonly #lbBox-mat .field, body.viewonly #lbBox-mat .footer-actions,
+  body.viewonly #view-settings .card,
+  body.viewonly [onclick^="editQuote"], body.viewonly [onclick^="deleteQuote"], body.viewonly [onclick^="lbEdit"], body.viewonly [onclick^="lbDel"],
+  body.viewonly [onclick^="editLabourEntry"], body.viewonly [onclick^="deleteLabourEntry"], body.viewonly [onclick^="deleteLabourFromDetail"]{display:none !important;}
+  .quote-item.fin{border-left:4px solid var(--teal);}
+  .fin-tag{display:inline-block;background:var(--teal);color:#fff;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:700;margin-left:6px;}
+  .fin-row{display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;margin-top:6px;}
+  .fin-row input{width:auto;margin:0;}
+  .wd-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .wd-chip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;font-size:.8rem;font-weight:600;cursor:pointer;background:#fff;color:var(--ink);user-select:none;}
+  .wd-chip.on{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .wd-chip .wd-x{margin-left:8px;opacity:.85;}
+  .wd-item{margin-bottom:10px;}
+  .wd-item .select-row{padding:2px 0;}
+  .wd-item .select-row label{font-size:.82rem;}
+  .wd-inline-fields{display:flex;gap:6px;margin-top:4px;margin-left:24px;}
+  .wd-inline-fields input{padding:6px 8px;font-size:.8rem;}
+  .ls-custom-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);}
+  .ls-custom-item:last-child{border-bottom:none;}
+  .ls-custom-item .name{font-weight:700;font-size:.88rem;}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;font-size:.85rem;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;}
+  .toast.show{opacity:1;}
+  .mbx{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .mbx-card{background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px;text-align:center;}
+  .mbx-card h3{margin-bottom:8px;} .mbx-card p{font-size:.9rem;color:#444;margin-bottom:14px;white-space:pre-line;}
+  .mbx-card .btn{margin:0 4px;}
+
+  .footer-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .footer-actions .btn{flex:1;min-width:120px;}
+
+  hr.soft{border:none;border-top:1px solid var(--line);margin:14px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <button class="help-btn no-print" onclick="helpOpen()" title="Help">❓</button>
+    <h1>PaintQuote <span class="pro">Pro</span></h1>
+    <p class="tag">Professional Painting Estimation &amp; Quotation Software</p>
+    <div class="poweredby">
+      Powered by A.S.M Consultancy Service<br>Chidambaram
+    </div>
+    <div class="version">Ver 1.0</div>
+  </div>
+  <div class="brushstroke"></div>
+
+  <div id="voBanner" class="no-print">📂 Viewing old year: <b id="voName"></b> — view only <button class="btn btn-outline btn-sm" style="background:#fff;" onclick="location.reload()">Back to current year</button></div>
+  <div class="tabs no-print">
+    <div class="tab active" data-tab="new">New Quote</div>
+    <div class="tab" data-tab="saved">Saved</div>
+    <div class="tab" data-tab="settings">Profile</div>
+  </div>
+
+  <!-- ===================== ONE-TIME SETUP VIEW ===================== -->
+  <div class="view" id="view-setup">
+    <div class="card" id="firstRunCard">
+      <h3>No data found on this device</h3>
+      <p style="font-size:.85rem;color:#6b6558;">Already used this app? Restore your data, or just fill the setup below to start fresh.</p>
+      <div class="footer-actions">
+        <button class="btn btn-outline" onclick="driveRestore()">☁ Restore from Google Drive</button>
+        <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">⬆ Backup file</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Welcome — quick one-time setup</h3>
+      <p style="font-size:.88rem;color:#6b6558;margin-top:-6px;">Enter your details once. You can reset this later from the Profile tab.</p>
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="setupName" placeholder="e.g. Rajesh Kumar">
+      </div>
+      <div class="field">
+        <label>Company Name</label>
+        <input type="text" id="setupCompany" placeholder="e.g. A.S.M Consultancy Service">
+      </div>
+      <div class="field">
+        <label>Cell Number</label>
+        <input type="tel" id="setupCell" placeholder="e.g. 9876543210">
+      </div>
+      <button class="btn btn-teal btn-block" onclick="saveProfile()">Save &amp; Start Quoting</button>
+    </div>
+  </div>
+
+  <!-- ===================== NEW QUOTATION VIEW ===================== -->
+  <div class="view active" id="view-new">
+
+    <div class="footer-actions no-print" style="margin-bottom:14px;">
+      <button class="btn btn-outline btn-block" onclick="startFreshQuote()">+ Start a New Blank Quotation</button>
+    </div>
+
+    <div class="card">
+      <h3>Customer Details</h3>
+      <div class="field">
+        <label>Customer Name</label>
+        <input type="text" id="custName" placeholder="e.g. Suresh Kumar">
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <textarea id="custAddress" rows="2" placeholder="Site address"></textarea>
+      </div>
+      <div class="field">
+        <label>Contact No.</label>
+        <input type="tel" id="custContact" placeholder="e.g. 9876543210">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Site Length (ft)</label>
+          <input type="number" id="siteLength" placeholder="0" oninput="calcSiteArea()">
+        </div>
+        <div class="field">
+          <label>Site Width (ft)</label>
+          <input type="number" id="siteWidth" placeholder="0" oninput="calcSiteArea()">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Site Area (for your reference — not shown in PDF/WhatsApp)</label>
+        <div class="sqft-badge" id="siteAreaOut" style="display:inline-block;">0 sqft</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Add Work Heading</h3>
+      <div class="row2">
+        <select id="headingPreset">
+          <option value="">— choose or type custom —</option>
+          <option value="Interior">Interior</option>
+          <option value="Exterior">Exterior</option>
+          <option value="Ceiling">Ceiling</option>
+          <option value="Lump Sum">Lump Sum</option>
+          <option value="Only Labour">Only Labour</option>
+        </select>
+        <input type="text" id="headingCustom" placeholder="or type custom heading">
+      </div>
+      <button class="btn btn-ochre btn-block" style="margin-top:10px;" onclick="addHeading()">+ Add Heading</button>
+    </div>
+
+    <div id="headingsContainer"></div>
+
+    <div class="card">
+      <h3>Work Details / Scope of Work</h3>
+      <div class="select-row" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:4px;">
+        <input type="checkbox" id="workSelectAll" onchange="toggleAllWorkDetails(this.checked)">
+        <label for="workSelectAll">Select All</label>
+      </div>
+      <div id="workDetailsList" class="wd-wrap"></div>
+      <div class="row2" style="margin-top:12px;">
+        <input type="text" id="wdExtraInput" placeholder="Add extra item (this quotation only)" onkeydown="if(event.key==='Enter'){event.preventDefault();addExtraWorkItem();}">
+        <button class="btn btn-outline" onclick="addExtraWorkItem()">+ Add</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Paint Brand</h3>
+      <p style="font-size:.8rem;color:#6b6558;margin-top:-6px;">Company name applies to the whole quotation. Set the Paint Grade separately for each heading below (Interior, Exterior, Ceiling can each use a different grade).</p>
+      <div class="select-row" style="border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px;">
+        <input type="checkbox" id="paintChk" onchange="renderHeadings(true)">
+        <label for="paintChk">Include paint brand details</label>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Company Name</label>
+        <input type="text" id="paintCompany" placeholder="e.g. Asian Paints" onchange="renderHeadings(true)">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Additional Work (Lump Sum)</h3>
+      <div class="ls-row">
+        <input type="checkbox" id="lsEnamelChk" onchange="renderHeadings(true)">
+        <div class="ls-label">Wood & Grill Work</div>
+        <input type="number" id="lsEnamelVal" placeholder="LS Amount ₹" onchange="renderHeadings(true)">
+      </div>
+      <div class="ls-row">
+        <input type="checkbox" id="lsWoodChk" onchange="renderHeadings(true)">
+        <div class="ls-label">Wood Polish</div>
+        <input type="number" id="lsWoodVal" placeholder="LS Amount ₹" onchange="renderHeadings(true)">
+      </div>
+    </div>
+
+    <div class="netbar">
+      <div class="label">Total Sqft (all headings)</div>
+      <div class="amt" id="grandSqft">0 sqft</div>
+    </div>
+    <div class="netbar">
+      <div class="label">Net Amount</div>
+      <div class="amt" id="grandAmount">₹0</div>
+    </div>
+
+    <button class="btn btn-teal btn-block" id="finishBtn" onclick="finishQuotation()">✓ Finish &amp; Preview Quotation</button>
+    <button class="btn btn-outline btn-block" id="cancelEditBtn" style="display:none;margin-top:8px;" onclick="cancelEdit()">✕ Cancel edit</button>
+  </div>
+
+  <!-- ===================== SAVED QUOTATIONS VIEW ===================== -->
+  <div class="view" id="view-saved">
+    <div class="card" id="savedList"></div>
+  </div>
+
+  <!-- ===================== LABOUR VIEW (linked to a customer quotation) ===================== -->
+  <div class="view" id="view-labour">
+    <div class="card" style="border-left:5px solid var(--teal);">
+      <h3 style="margin-bottom:2px;">Labour for: <span id="labourCustName"></span></h3>
+      <p style="font-size:.8rem;color:#6b6558;margin:0;">These labour entries are linked only to this customer's quotation.</p>
+    </div>
+    <div class="card" id="labSummary"></div>
+
+    <div class="card" id="labourFormCard">
+      <h3 id="labourFormTitle">Add Labour Entry</h3>
+      <div class="row2">
+        <div class="field">
+          <label>Date</label>
+          <div class="dp"><input type="text" id="labDate" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('labDate')">📅</button></div>
+        </div>
+        <div class="field">
+          <label>No. of Labours</label>
+          <input type="number" id="labNos" placeholder="0" oninput="updateLabourTotalPreview()">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Rate per Labour (₹)</label>
+          <input type="number" id="labRate" placeholder="0" oninput="updateLabourTotalPreview()">
+        </div>
+        <div class="field">
+          <label>Miscellaneous (₹)</label>
+          <input type="number" id="labMisc" placeholder="0" oninput="updateLabourTotalPreview()">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Total for the Day</label>
+        <div class="sqft-badge" id="labTotalPreview" style="display:inline-block;">₹0</div>
+      </div>
+      <div class="footer-actions" style="margin-top:14px;">
+        <button class="btn btn-teal" onclick="saveLabourEntry()">💾 Save Entry</button>
+        <button class="btn btn-ghost" id="labCancelBtn" style="display:none;" onclick="resetLabourForm()">Cancel Edit</button>
+      </div>
+    </div>
+
+    <div class="card" id="labourList"></div>
+
+    <div class="netbar">
+      <div class="label">Total No. of Labours</div>
+      <div class="amt" id="labourGrandNos">0</div>
+    </div>
+    <div class="netbar">
+      <div class="label">Total Amount</div>
+      <div class="amt" id="labourGrandAmount">₹0</div>
+    </div>
+
+    <div class="card" id="lbBox-rec"></div>
+    <div class="card" id="lbBox-mat"></div>
+
+    <div class="footer-actions no-print" style="margin-bottom:10px;flex-direction:column;gap:8px;">
+      <button class="btn btn-ochre btn-block" onclick="copyCustomerStatement()">📋 Copy Customer Copy to WhatsApp</button>
+      <button class="btn btn-outline btn-block" onclick="acctPdf('cust')">📄 Customer Copy PDF</button>
+      <button class="btn btn-outline btn-block" onclick="acctPdf('full')">📄 Full Account PDF (only for me)</button>
+    </div>
+    <button class="btn btn-ghost btn-block no-print" onclick="switchTab('saved')">← Back to Saved Quotations</button>
+  </div>
+
+  <!-- ===================== LABOUR DETAIL / PDF VIEW ===================== -->
+  <div class="view" id="view-labour-detail">
+    <div class="doc" id="labourDocPreview"></div>
+    <div class="footer-actions no-print">
+      <button class="btn btn-outline" onclick="editLabourFromDetail()">✎ Edit</button>
+      <button class="btn btn-danger" onclick="deleteLabourFromDetail()">🗑 Delete</button>
+      <button class="btn btn-teal" onclick="labourPreviewPdf()">📄 Preview PDF</button>
+    </div>
+    <button class="btn btn-ghost btn-block no-print" onclick="showOnly('view-labour')">← Back to Labour List</button>
+  </div>
+
+  <!-- ===================== SETTINGS / PROFILE VIEW ===================== -->
+  <div class="view" id="view-settings">
+    <div class="card">
+      <h3>Your Profile (one-time data)</h3>
+      <div class="field"><label>Name</label><div id="profName" style="padding:8px 0;font-weight:700;"></div></div>
+      <div class="field"><label>Company</label><div id="profCompany" style="padding:8px 0;font-weight:700;"></div></div>
+      <div class="field"><label>Cell Number</label><div id="profCell" style="padding:8px 0;font-weight:700;"></div></div>
+      <hr class="soft">
+      <p style="font-size:.85rem;color:#6b6558;">Resetting will clear this profile and show the setup screen again next time. Your saved quotations are not affected.</p>
+      <button class="btn btn-danger btn-block" onclick="resetProfile()">Reset Profile</button>
+    </div>
+    <div class="card">
+      <h3>Backup / Restore Data</h3>
+      <p style="font-size:.85rem;color:#6b6558;">Save all your data (profile + saved quotations) as a backup file, or restore from one on another device.</p>
+      <div class="footer-actions">
+        <button class="btn btn-outline" onclick="exportBackup()">⬇ Export Backup</button>
+        <button class="btn btn-outline" onclick="document.getElementById('restoreFile').click()">⬆ Restore Backup</button>
+      </div>
+      <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="importBackup(event)">
+    </div>
+    <div class="card">
+      <h3>Google Drive Backup</h3>
+      <p style="font-size:.85rem;color:#6b6558;">Sign in with Google to back up to your Drive (folder "ASM Backups", file painting-quotation-year). Open the app in Chrome.</p>
+      <div class="footer-actions">
+        <button class="btn btn-outline" onclick="driveBackupNow()">☁ Backup Now</button>
+        <button class="btn btn-outline" onclick="driveRestore()">☁ Restore from Drive</button>
+      </div>
+      <p style="font-size:.8rem;color:#6b6558;margin-top:8px;">Last Drive backup: <span id="driveLast">never</span></p>
+    </div>
+    <div class="card">
+      <h3>Year Close &amp; Old Years</h3>
+      <p style="font-size:.85rem;color:#6b6558;">Close Year backs up everything to Google Drive (painting-quotation-DD-MM-YYYY) and then clears quotations, labour, received and materials. Company details stay. Old years open as view-only.</p>
+      <div class="footer-actions" style="flex-direction:column;gap:8px;">
+        <button class="btn btn-ochre btn-block" onclick="yearClose()">🔒 Close Year</button>
+        <button class="btn btn-outline btn-block" onclick="viewOldYearDrive()">☁ View Old Year (Google Drive)</button>
+        <button class="btn btn-outline btn-block" onclick="document.getElementById('oldYearFile').click()">📂 View Old Year (file)</button>
+        <input type="file" id="oldYearFile" accept=".json,application/json" style="display:none" onchange="viewOldYearFile(event)">
+      </div>
+    </div>
+    <div class="card">
+      <h3>Delete All Data</h3>
+      <p style="font-size:.85rem;color:#6b6558;">Permanently removes your profile and every saved quotation from this device. This cannot be undone — export a backup first if unsure.</p>
+      <button class="btn btn-danger btn-block" onclick="deleteAllData()">🗑 Delete All Data</button>
+    </div>
+  </div>
+
+  <!-- ===================== PREVIEW / EXPORT VIEW ===================== -->
+  <div class="view" id="view-preview">
+    <div class="doc" id="docPreview"></div>
+
+    <div class="footer-actions no-print">
+      <button class="btn btn-teal" onclick="previewPdf()">📄 Preview PDF</button>
+      <button class="btn btn-ochre" onclick="copyWhatsappText()">📋 Copy to WhatsApp</button>
+    </div>
+    <button class="btn btn-ghost btn-block no-print" onclick="switchTab('new')">← Back to editing</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Storage helpers ---------------- */
+const LS_PROFILE = 'bs_profile';
+const LS_QUOTES = 'bs_quotes';
+const LS_LABOUR = 'bs_labour';
+
+function loadProfile(){ try{ return JSON.parse(localStorage.getItem(LS_PROFILE)); }catch(e){ return null; } }
+function saveProfileData(p){ if(VIEW_ONLY) return; localStorage.setItem(LS_PROFILE, JSON.stringify(p)); }
+function loadQuotes(){ try{ return JSON.parse(localStorage.getItem(LS_QUOTES)) || []; }catch(e){ return []; } }
+function saveQuotes(q){ if(VIEW_ONLY) return; localStorage.setItem(LS_QUOTES, JSON.stringify(q)); }
+function loadLabour(){ try{ return JSON.parse(localStorage.getItem(LS_LABOUR)) || []; }catch(e){ return []; } }
+function saveLabourData(l){ if(VIEW_ONLY) return; localStorage.setItem(LS_LABOUR, JSON.stringify(l)); }
+
+let profile = loadProfile();
+let quotes = loadQuotes();
+let labourEntries = loadLabour();
+let editingLabourId = null;
+let currentLabourView = null;
+let currentLabourQuoteId = null;
+
+/* current in-progress quotation state */
+let headings = []; // {id, name, rate, rows:[{id,length,height,nos}]}
+let headingSeq = 1;
+let rowSeq = 1;
+let editingQuoteId = null;
+let VIEW_ONLY = false;   // true while an old year is opened for viewing
+let currentPreviewQuote = null;
+
+const defaultWorkDetails = [
+  'Cleaning the wall surface',
+  'Water wash',
+  'Minor crack and putty patch work',
+  'One coat primer',
+  'Two coats colour',
+  'White Wash',
+  'Interior Putty',
+  'Exterior Putty',
+  'Design Work',
+  'Other'
+];
+let workDetails = defaultWorkDetails.map(label => ({label, checked:false}));
+
+function joinEnglish(arr){
+  if(arr.length===0) return '';
+  if(arr.length===1) return arr[0];
+  if(arr.length===2) return arr[0]+' and '+arr[1];
+  return arr.slice(0,-1).join(', ')+' and '+arr[arr.length-1];
+}
+
+function buildThanksText(q){
+  const company = q.paintBrand ? (q.paintBrand.company||'') : '';
+  const graded = (q.headings||[]).filter(h=>h.paintGrade);
+  let phrase = '';
+
+  if(graded.length){
+    const uniqueGrades = [...new Set(graded.map(h=>h.paintGrade))];
+    if(uniqueGrades.length === 1){
+      phrase = ' using '+uniqueGrades[0];
+    } else {
+      const parts = graded.map(h=>h.paintGrade+' for '+h.name);
+      phrase = ' using '+joinEnglish(parts);
+    }
+    if(company) phrase += ' from '+company;
+  } else if(company){
+    phrase = ' using paint from '+company;
+  }
+  return 'Thank you for giving us the opportunity to quote for your painting work'+phrase+'. We assure you of quality workmanship and timely completion.';
+}
+
+function buildPaintDetailLines(q){
+  const lines = [];
+  const company = q.paintBrand ? (q.paintBrand.company||'') : '';
+  if(company) lines.push('Paint Company: '+company);
+  (q.headings||[]).forEach(h=>{
+    if(h.paintGrade) lines.push(h.name+' Paint Grade: '+h.paintGrade);
+  });
+  return lines;
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------------- Tabs / views ---------------- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  if(name==='new') document.getElementById('view-new').classList.add('active');
+  if(name==='saved'){ document.getElementById('view-saved').classList.add('active'); renderSavedList(); }
+  if(name==='settings'){ document.getElementById('view-settings').classList.add('active'); renderProfileView(); }
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>switchTab(t.dataset.tab)));
+
+function showOnly(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ---------------- Setup / profile ---------------- */
+
+function initApp(){
+  if(!profile){
+    showOnly('view-setup');
+    document.querySelector('.tabs').style.display='none';
+  } else {
+    document.querySelector('.tabs').style.display='flex';
+    renderWorkDetails();
+    resetLabourForm();
+    switchTab('new');
+  }
+}
+
+function saveProfile(){
+  const name = document.getElementById('setupName').value.trim();
+  const company = document.getElementById('setupCompany').value.trim();
+  const cell = document.getElementById('setupCell').value.trim();
+  if(!name || !company || !cell){ toast('Please fill all three fields'); return; }
+  profile = {name, company, cell};
+  saveProfileData(profile);
+  document.querySelector('.tabs').style.display='flex';
+  renderWorkDetails();
+  resetLabourForm();
+  switchTab('new');
+  toast('Profile saved!');
+}
+
+function renderProfileView(){
+  if(!profile) return;
+  document.getElementById('profName').textContent = profile.name;
+  document.getElementById('profCompany').textContent = profile.company;
+  document.getElementById('profCell').textContent = profile.cell;
+}
+
+function resetProfile(){
+  if(!confirm('Reset your profile? You will need to enter it again.')) return;
+  profile = null;
+  localStorage.removeItem(LS_PROFILE);
+  document.getElementById('setupName').value='';
+  document.getElementById('setupCompany').value='';
+  document.getElementById('setupCell').value='';
+  document.querySelector('.tabs').style.display='none';
+  showOnly('view-setup');
+  toast('Profile reset');
+}
+
+function deleteAllData(){
+  if(VIEW_ONLY){ toast('Go back to the current year first'); return; }
+  if(!confirm('This will permanently delete your profile, all saved quotations, AND all labour records from this device. Continue?')) return;
+  if(!confirm('Are you absolutely sure? This cannot be undone.')) return;
+  localStorage.removeItem(LS_PROFILE);
+  localStorage.removeItem(LS_QUOTES);
+  localStorage.removeItem(LS_LABOUR);
+  localStorage.removeItem('bs_receipts'); localStorage.removeItem('bs_materials');
+  profile = null;
+  quotes = [];
+  labourEntries = [];
+  LB.rec.data = []; LB.mat.data = [];
+  document.querySelector('.tabs').style.display='none';
+  showOnly('view-setup');
+  toast('All data deleted');
+}
+
+/* ---------------- Site area (view-only, excluded from exports) ---------------- */
+function calcSiteArea(){
+  const l = parseFloat(document.getElementById('siteLength').value)||0;
+  const w = parseFloat(document.getElementById('siteWidth').value)||0;
+  document.getElementById('siteAreaOut').textContent = (l*w).toFixed(2) + ' sqft';
+}
+
+/* ---------------- Work details checklist ---------------- */
+function renderWorkDetails(){
+  const c = document.getElementById('workDetailsList');
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  c.innerHTML = workDetails.map((w,i)=>`<span class="wd-chip ${w.checked?'on':''}" onclick="toggleWorkItem(${i})">${w.checked?'✓ ':''}${esc(w.label)}${w.extra?`<span class="wd-x" onclick="event.stopPropagation();removeExtraWorkItem(${i})">✕</span>`:''}</span>`).join('');
+  syncSelectAll();
+}
+function toggleWorkItem(i){
+  workDetails[i].checked = !workDetails[i].checked;
+  renderWorkDetails();
+}
+function addExtraWorkItem(){
+  const inp = document.getElementById('wdExtraInput');
+  const label = inp.value.trim();
+  if(!label){ toast('Type the extra item first'); return; }
+  if(workDetails.some(w=>w.label.toLowerCase()===label.toLowerCase())){ toast('Already in the list'); return; }
+  workDetails.push({label, checked:true, extra:true});
+  inp.value='';
+  renderWorkDetails();
+}
+function removeExtraWorkItem(i){
+  workDetails.splice(i,1);
+  renderWorkDetails();
+}
+function syncSelectAll(){
+  const allChecked = workDetails.every(w=>w.checked);
+  document.getElementById('workSelectAll').checked = allChecked;
+}
+function toggleAllWorkDetails(state){
+  workDetails.forEach(w=>w.checked=state);
+  renderWorkDetails();
+}
+
+/* ---------------- Headings ---------------- */
+function addHeading(){
+  const preset = document.getElementById('headingPreset').value;
+  const custom = document.getElementById('headingCustom').value.trim();
+  const name = custom || preset;
+  if(!name){ toast('Choose or type a heading name'); return; }
+
+  const isLS = !custom && (preset==='Lump Sum' || preset==='Only Labour');
+  if(isLS){
+    headings.push({ id: headingSeq++, name, kind:'ls', rate:0, lump:true, lumpAmt:0, areaIn:false, areaEx:false, paintGrade:'', deduction:0,
+      rows:[{id:rowSeq++, length:'', height:'', nos:1, sqft:0}] });
+  } else {
+    headings.push({ id: headingSeq++, name, rate:0, lump:false, lumpAmt:0, paintGrade:'', deduction:0, rows:[{id:rowSeq++, length:'', height:'', nos:1, sqft:0}] });
+  }
+  document.getElementById('headingPreset').value='';
+  document.getElementById('headingCustom').value='';
+  renderHeadings();
+}
+
+function deleteHeading(hid){
+  if(!confirm('Delete this heading and its rows?')) return;
+  headings = headings.filter(h=>h.id!==hid);
+  renderHeadings();
+}
+
+function renameHeading(hid){
+  const h = headings.find(x=>x.id===hid);
+  const n = prompt('Rename heading', h.name);
+  if(n && n.trim()){ h.name = n.trim(); renderHeadings(); }
+}
+
+function addRow(hid){
+  const h = headings.find(x=>x.id===hid);
+  h.rows.push({id:rowSeq++, length:'', height:'', nos:1, sqft:0});
+  renderHeadings();
+}
+function deleteRow(hid, rid){
+  const h = headings.find(x=>x.id===hid);
+  h.rows = h.rows.filter(r=>r.id!==rid);
+  if(h.rows.length===0) h.rows.push({id:rowSeq++, length:'', height:'', nos:1, sqft:0});
+  renderHeadings();
+}
+function updateRow(hid, rid, field, val){
+  const h = headings.find(x=>x.id===hid);
+  const r = h.rows.find(x=>x.id===rid);
+  if(field==='sqft'){
+    // Direct manual Sqft entry — used when Length/Height/Nos are left blank
+    r.sqft = parseFloat(val)||0;
+  } else {
+    r[field] = val;
+    // Recalculate Sqft automatically from Length x Height x Nos
+    const l = parseFloat(r.length)||0;
+    const ht = parseFloat(r.height)||0;
+    const n = parseFloat(r.nos)||0;
+    r.sqft = l*ht*n;
+  }
+  renderHeadings(true);
+}
+function updateRate(hid, val){
+  const h = headings.find(x=>x.id===hid);
+  h.rate = parseFloat(val)||0;
+  renderHeadings(true);
+}
+/* ---------------- Lumpsum per heading (module) ---------------- */
+function toggleLump(hid, on){
+  const h = headings.find(x=>x.id===hid);
+  h.lump = !!on;
+  renderHeadings(true);
+}
+function updateLumpAmt(hid, val){
+  const h = headings.find(x=>x.id===hid);
+  h.lumpAmt = parseFloat(val)||0;
+  renderHeadings(true);
+}
+function editorHeadAmt(h){ return h.lump ? (parseFloat(h.lumpAmt)||0) : headingNetSqft(h)*h.rate; }
+function savedHeadAmt(h){ return h.lump ? (parseFloat(h.lumpAmt)||0) : h.sqft*h.rate; }
+
+function updateGrade(hid, val){
+  const h = headings.find(x=>x.id===hid);
+  h.paintGrade = val;
+  renderHeadings(true);
+}
+function updateDeduction(hid, val){
+  const h = headings.find(x=>x.id===hid);
+  h.deduction = parseFloat(val)||0;
+  renderHeadings(true);
+}
+
+function rowSqft(r){
+  return parseFloat(r.sqft)||0;
+}
+function headingSqft(h){
+  return h.rows.reduce((sum,r)=>sum + rowSqft(r), 0);
+}
+function headingNetSqft(h){
+  const gross = headingSqft(h);
+  const deduction = parseFloat(h.deduction)||0;
+  return Math.max(0, gross - deduction);
+}
+
+function lsTotal(){
+  let t = 0;
+  if(document.getElementById('lsEnamelChk') && document.getElementById('lsEnamelChk').checked){
+    t += parseFloat(document.getElementById('lsEnamelVal').value)||0;
+  }
+  if(document.getElementById('lsWoodChk') && document.getElementById('lsWoodChk').checked){
+    t += parseFloat(document.getElementById('lsWoodVal').value)||0;
+  }
+  return t;
+}
+
+function updateGrandTotals(){
+  let grandSqft = 0, grandAmount = 0;
+  headings.forEach(h=>{
+    const net = headingNetSqft(h);
+    grandSqft += net;
+    grandAmount += editorHeadAmt(h);
+  });
+  grandAmount += lsTotal();
+
+  if(headings.length===0){
+    const l = parseFloat(document.getElementById('siteLength').value)||0;
+    const w = parseFloat(document.getElementById('siteWidth').value)||0;
+    grandSqft = l*w;
+  }
+
+  document.getElementById('grandSqft').textContent = grandSqft.toFixed(2) + ' sqft';
+  document.getElementById('grandAmount').textContent = '₹' + grandAmount.toFixed(2);
+}
+
+const swatchColors = ['var(--teal)','var(--ochre)','var(--brick)','#6b6558'];
+
+function renderHeadings(keepFocus){
+  const c = document.getElementById('headingsContainer');
+  c.innerHTML = '';
+
+  headings.forEach((h, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'card heading-card';
+    div.style.borderLeftColor = swatchColors[idx % swatchColors.length];
+    if(h.kind==='ls'){ div.innerHTML = lsCardHtml(h, swatchColors[idx % swatchColors.length]); c.appendChild(div); return; }
+
+    const grossSqft = headingSqft(h);
+    const deduction = parseFloat(h.deduction)||0;
+    const netSqft = Math.max(0, grossSqft - deduction);
+    const amount = editorHeadAmt(h);
+
+    let rowsHtml = h.rows.map(r=>{
+      const s = rowSqft(r);
+      return `<tr class="rowline">
+        <td><input type="number" value="${r.length}" placeholder="Length" onchange="updateRow(${h.id},${r.id},'length',this.value)"></td>
+        <td><input type="number" value="${r.height}" placeholder="Height" onchange="updateRow(${h.id},${r.id},'height',this.value)"></td>
+        <td><input type="number" value="${r.nos}" placeholder="Nos" onchange="updateRow(${h.id},${r.id},'nos',this.value)"></td>
+        <td><input type="number" value="${s||''}" placeholder="Sqft" style="width:80px;" onchange="updateRow(${h.id},${r.id},'sqft',this.value)"></td>
+        <td><button class="icon-btn danger" onclick="deleteRow(${h.id},${r.id})">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    div.innerHTML = `
+      <div class="heading-head">
+        <div class="swatchbar"><span class="swatch" style="background:${swatchColors[idx % swatchColors.length]}"></span><span class="name">${h.name}</span></div>
+        <div>
+          <label style="display:inline-flex;align-items:center;gap:4px;font-size:.8rem;margin:0 8px 0 0;white-space:nowrap;"><input type="checkbox" style="width:auto;margin:0;" ${h.lump?'checked':''} onchange="toggleLump(${h.id}, this.checked)"> Lumpsum</label>
+          <button class="icon-btn" onclick="renameHeading(${h.id})" title="Rename">✎</button>
+          <button class="icon-btn danger" onclick="deleteHeading(${h.id})" title="Delete">🗑</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Length (ft)</th><th>Height (ft)</th><th>Nos</th><th>Sqft</th><th></th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <button class="btn btn-outline btn-sm" onclick="addRow(${h.id})">+ Add Row</button>
+      <div class="field" style="margin-top:12px;margin-bottom:0;">
+        <label style="margin-bottom:4px;">Deduction Sqft (doors / windows, optional)</label>
+        <input type="number" value="${h.deduction||''}" placeholder="0" onchange="updateDeduction(${h.id}, this.value)">
+      </div>
+      <div class="field" style="margin-top:12px;margin-bottom:0;">
+        <label style="margin-bottom:4px;">Paint Grade for ${h.name} (optional)</label>
+        <select onchange="updateGrade(${h.id}, this.value)">
+          <option value="" ${!h.paintGrade?'selected':''}>— none —</option>
+          <option value="Economy Paint" ${h.paintGrade==='Economy Paint'?'selected':''}>Economy Paint</option>
+          <option value="Premium Paint" ${h.paintGrade==='Premium Paint'?'selected':''}>Premium Paint</option>
+          <option value="Luxury Paint" ${h.paintGrade==='Luxury Paint'?'selected':''}>Luxury Paint</option>
+        </select>
+      </div>
+      <div class="totals">
+        <div>
+          ${h.lump
+            ? `<label style="margin-bottom:2px;">Lumpsum Amount (₹)</label>
+          <input type="number" style="width:140px;" value="${h.lumpAmt||''}" placeholder="0" onchange="updateLumpAmt(${h.id}, this.value)">`
+            : `<label style="margin-bottom:2px;">Rate per sqft (₹)</label>
+          <input type="number" style="width:120px;" value="${h.rate||''}" placeholder="0" onchange="updateRate(${h.id}, this.value)">`}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.75rem;color:#8a8371;">${deduction>0 ? grossSqft.toFixed(2)+' − '+deduction.toFixed(2)+' = ' : ''}${netSqft.toFixed(2)} sqft total</div>
+          <div class="amt">₹${amount.toFixed(2)}</div>
+        </div>
+      </div>
+    `;
+    c.appendChild(div);
+  });
+
+  updateGrandTotals();
+}
+
+/* ---------------- Finish / Preview ---------------- */
+function finishQuotation(){
+  const custName = document.getElementById('custName').value.trim();
+  const custAddress = document.getElementById('custAddress').value.trim();
+  const custContact = document.getElementById('custContact').value.trim();
+  if(!custName){ toast('Enter customer name'); return; }
+  if(headings.length===0){ toast('Add at least one heading'); return; }
+
+  const siteLength = parseFloat(document.getElementById('siteLength').value)||0;
+  const siteWidth = parseFloat(document.getElementById('siteWidth').value)||0;
+
+  const quoteHeadings = headings.map(h=>({
+    name: h.name,
+    rate: h.rate,
+    lump: !!h.lump,
+    lumpAmt: parseFloat(h.lumpAmt)||0,
+    kind: h.kind || '',
+    areaIn: !!h.areaIn,
+    areaEx: !!h.areaEx,
+    paintGrade: h.paintGrade || '',
+    deduction: parseFloat(h.deduction)||0,
+    rows: h.rows.map(r=>({length:r.length, height:r.height, nos:r.nos, sqft:r.sqft})),
+    sqft: headingNetSqft(h)
+  }));
+
+  const lsEnamelChecked = document.getElementById('lsEnamelChk').checked;
+  const lsEnamelVal = parseFloat(document.getElementById('lsEnamelVal').value)||0;
+  const lsWoodChecked = document.getElementById('lsWoodChk').checked;
+  const lsWoodVal = parseFloat(document.getElementById('lsWoodVal').value)||0;
+
+  const paintChecked = document.getElementById('paintChk').checked;
+  const paintCompany = document.getElementById('paintCompany').value.trim();
+
+  const headAmount = quoteHeadings.reduce((s,h)=>s + savedHeadAmt(h), 0);
+  const lsAmount = (lsEnamelChecked?lsEnamelVal:0) + (lsWoodChecked?lsWoodVal:0);
+  const netAmount = headAmount + lsAmount;
+
+  const quoteObj = {
+    id: editingQuoteId || Date.now(),
+    date: new Date().toLocaleDateString('en-IN'),
+    custName, custAddress, custContact,
+    siteLength, siteWidth,
+    headings: quoteHeadings,
+    workDetails: workDetails.filter(w=>w.checked).map(w=>w.label),
+    paintBrand: paintChecked ? {company: paintCompany} : null,
+    lsItems: [
+      ...(lsEnamelChecked ? [{label:'Wood & Grill Work', value: lsEnamelVal}] : []),
+      ...(lsWoodChecked ? [{label:'Wood Polish', value: lsWoodVal}] : [])
+    ],
+    netAmount
+  };
+
+  if(editingQuoteId){
+    const prevQ = quotes.find(q=>q.id===editingQuoteId);
+    if(prevQ && prevQ.finalizedAt) quoteObj.finalizedAt = prevQ.finalizedAt;
+    quotes = quotes.map(q=>q.id===editingQuoteId ? quoteObj : q);
+  } else {
+    quotes.push(quoteObj);
+  }
+  saveQuotes(quotes);
+  editingQuoteId = quoteObj.id;   // stay on this record: Back to editing + Finish again updates it, no duplicate
+  refreshSaveButtons();
+
+  currentPreviewQuote = quoteObj;
+  renderPreview(quoteObj);
+  showOnly('view-preview');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  toast('Quotation saved!');
+}
+
+/* on-screen preview: includes everything, for the contractor's own reference */
+function renderPreview(q){
+  const rows = q.headings.map(h=> h.kind==='ls'
+    ? lsParts(h).map(x=>`<tr><td><b>${escH(x.label)}</b></td><td></td><td>Lump Sum</td><td>₹${x.amt.toFixed(2)}</td></tr>`).join('')
+    : `<tr>
+      <td><b>${escH(h.name)}</b></td>
+      <td>${h.sqft.toFixed(2)} sqft</td>
+      <td>${h.lump ? 'Lump Sum' : '₹'+h.rate+'/sqft'}</td>
+      <td>₹${savedHeadAmt(h).toFixed(2)}</td>
+    </tr>`).join('');
+
+  const lsRows = (q.lsItems||[]).map(l=>`
+    <tr>
+      <td><b>${l.label}</b></td>
+      <td>—</td>
+      <td>LS</td>
+      <td>₹${l.value.toFixed(2)}</td>
+    </tr>`).join('');
+
+  const workList = (q.workDetails||[]).map(w=>`<li>${w}</li>`).join('');
+  const paintLine = buildPaintDetailLines(q).map(p=>`<li>${p}</li>`).join('');
+
+  document.getElementById('docPreview').innerHTML = `
+    <div class="doc-head">
+      <div class="biz">
+        <h2>${profile.company}</h2>
+        <div class="who">${profile.name} · ${profile.cell}</div>
+      </div>
+      <div class="qmeta">Quotation Date<br><b>${q.date}</b></div>
+    </div>
+    <div class="doc-cust">
+      <b>To:</b> ${q.custName}<br>
+      ${q.custAddress ? q.custAddress+'<br>' : ''}
+      ${q.custContact ? 'Contact: '+q.custContact+'<br>' : ''}
+      ${(q.siteLength||q.siteWidth) ? 'Site Area: '+q.siteLength+' ft × '+q.siteWidth+' ft = '+(q.siteLength*q.siteWidth).toFixed(2)+' sqft' : ''}
+    </div>
+    ${(workList || paintLine) ? `<h3 style="font-size:.95rem;">Work Details</h3><ul class="doc-worklist">${workList}${paintLine}</ul>` : ''}
+    <table>
+      <thead><tr><th>Work</th><th>Total Area</th><th>Rate</th><th>Amount</th></tr></thead>
+      <tbody>${rows}${lsRows}</tbody>
+    </table>
+    <div class="doc-net"><span>Net Amount</span><span>₹${q.netAmount.toFixed(2)}</span></div>
+    <div class="doc-note">Site area shown above is for your reference only and will not appear in the PDF or WhatsApp export.</div>
+    <div class="doc-thanks">
+      ${buildThanksText(q)}
+      <div class="sign">${profile.name}<br>${profile.company}<br>${profile.cell}</div>
+    </div>
+  `;
+}
+
+/* ---------------- PDF (real file, via jsPDF, no header/footer) ---------------- */
+function previewPdf(){
+  const q = currentPreviewQuote;
+  if(!q){ toast('No quotation to export'); return; }
+  if(!window.jspdf){ toast('PDF library not loaded — check your internet connection'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX = 40;
+  let y = 50;
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  function ensureSpace(next){
+    if(y + next > pageHeight - 40){ doc.addPage(); y = 50; }
+  }
+  function printWrapped(text, x, maxWidth, lineHeight){
+    const wrapped = doc.splitTextToSize(text, maxWidth);
+    wrapped.forEach(line=>{ ensureSpace(lineHeight); doc.text(line, x, y); y += lineHeight; });
+  }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Painting Quotation', marginX, y); y += 20;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('Date: '+q.date, marginX, y); y += 22;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(q.custName, marginX, y); y += 16;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  if(q.custAddress){ printWrapped(q.custAddress, marginX, 515, 14); }
+  if(q.custContact){ doc.text('Contact: '+q.custContact, marginX, y); y += 14; }
+  y += 8;
+
+  const paintLines = buildPaintDetailLines(q);
+
+  if((q.workDetails && q.workDetails.length) || paintLines.length){
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Work Details:', marginX, y); y += 15;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    (q.workDetails||[]).forEach(w=>{
+      ensureSpace(14);
+      doc.text('• '+w, marginX+8, y); y += 14;
+    });
+    paintLines.forEach(p=>{
+      ensureSpace(14);
+      doc.text('• '+p, marginX+8, y); y += 14;
+    });
+    y += 8;
+  }
+
+  ensureSpace(20);
+  const colX = [marginX, marginX+220, marginX+320, marginX+420];
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('Work', colX[0], y);
+  doc.text('Area', colX[1], y);
+  doc.text('Rate', colX[2], y);
+  doc.text('Amount', colX[3], y);
+  y += 6;
+  doc.setLineWidth(0.5);
+  doc.line(marginX, y, 555, y);
+  y += 14;
+
+  doc.setFont('helvetica','normal');
+  q.headings.forEach(h=>{
+    ensureSpace(16);
+    if(h.kind==='ls'){
+      lsParts(h).forEach(x=>{
+        ensureSpace(16);
+        doc.text(x.label, colX[0], y);
+        doc.text('Lump Sum', colX[2], y);
+        doc.text('Rs.'+x.amt.toFixed(2), colX[3], y);
+        y += 16;
+      });
+      return;
+    }
+    doc.text(h.name, colX[0], y);
+    doc.text(h.sqft.toFixed(2)+' sqft', colX[1], y);
+    doc.text(h.lump ? 'Lump Sum' : 'Rs.'+h.rate+'/sqft', colX[2], y);
+    doc.text('Rs.'+savedHeadAmt(h).toFixed(2), colX[3], y);
+    y += 16;
+  });
+  (q.lsItems||[]).forEach(l=>{
+    ensureSpace(16);
+    doc.text(l.label, colX[0], y);
+    doc.text('—', colX[1], y);
+    doc.text('LS', colX[2], y);
+    doc.text('Rs.'+l.value.toFixed(2), colX[3], y);
+    y += 16;
+  });
+
+  y += 8;
+  ensureSpace(30);
+  doc.setLineWidth(1);
+  doc.line(marginX, y, 555, y);
+  y += 20;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('Net Amount: Rs.'+q.netAmount.toFixed(2), marginX, y);
+  y += 30;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  printWrapped(buildThanksText(q), marginX, 515, 14);
+  y += 10;
+  ensureSpace(50);
+  doc.setFont('helvetica','bold');
+  doc.text(profile.name, marginX, y); y += 14;
+  doc.text(profile.company, marginX, y); y += 14;
+  doc.text(profile.cell, marginX, y);
+
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  toast('PDF ready — opened in a new tab');
+}
+
+/* ---------------- WhatsApp text (no header/footer, no site area) ---------------- */
+function buildWhatsappText(){
+  const q = currentPreviewQuote;
+  let lines = [];
+  lines.push('*Painting Quotation*');
+  lines.push('Date: '+q.date);
+  lines.push('');
+  lines.push('*'+q.custName+'*');
+  if(q.custAddress) lines.push(q.custAddress);
+  if(q.custContact) lines.push('Contact: '+q.custContact);
+  lines.push('');
+  const paintLines = buildPaintDetailLines(q);
+
+  if((q.workDetails && q.workDetails.length) || paintLines.length){
+    lines.push('*Work Details:*');
+    (q.workDetails||[]).forEach(w=>lines.push('- '+w));
+    paintLines.forEach(p=>lines.push('- '+p));
+    lines.push('');
+  }
+  q.headings.forEach(h=>{
+    if(h.kind==='ls'){
+      lsParts(h).forEach(x=>lines.push(`*${x.label}* (Lump Sum): *Rs.${x.amt.toFixed(2)}*`));
+      return;
+    }
+    lines.push(h.lump
+      ? `*${h.name}*: ${h.sqft.toFixed(2)} sqft - Lump Sum = *Rs.${savedHeadAmt(h).toFixed(2)}*`
+      : `*${h.name}*: ${h.sqft.toFixed(2)} sqft x Rs.${h.rate}/sqft = *Rs.${savedHeadAmt(h).toFixed(2)}*`);
+  });
+  (q.lsItems||[]).forEach(l=>{
+    lines.push(`*${l.label}* (LS): *Rs.${l.value.toFixed(2)}*`);
+  });
+  lines.push('');
+  lines.push(`*Net Amount: Rs.${q.netAmount.toFixed(2)}*`);
+  lines.push('');
+  lines.push(buildThanksText(q));
+  lines.push('');
+  lines.push(profile.name);
+  lines.push(profile.company);
+  lines.push(profile.cell);
+  return lines.join('\n');
+}
+
+function copyWhatsappText(){
+  if(!currentPreviewQuote){ toast('No quotation to export'); return; }
+  const text = buildWhatsappText();
+  navigator.clipboard.writeText(text).then(()=>toast('Copied! Paste it in WhatsApp')).catch(()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Copied! Paste it in WhatsApp');
+  });
+}
+
+/* ---------------- Saved list ---------------- */
+function renderSavedList(){
+  const el = document.getElementById('savedList');
+  if(quotes.length===0){
+    el.innerHTML = `<div class="empty"><div class="big">🗒️</div>No saved quotations yet.<br>Create one from the "New Quote" tab.</div>`;
+    return;
+  }
+  migrateFinalized();
+  const fin = quotes.filter(q=>q.finalizedAt).sort((a,b)=>a.finalizedAt-b.finalizedAt);
+  const drafts = quotes.filter(q=>!q.finalizedAt).reverse();
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const card = (q, n) => `
+    <div class="quote-item ${n?'fin':''}">
+      <div>
+        <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
+        <div class="meta">${q.date} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
+        <label class="fin-row"><input type="checkbox" ${n?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
+      </div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" onclick="viewQuote(${q.id})">View</button>
+        <button class="btn btn-outline btn-sm" onclick="editQuote(${q.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id})">Del</button>
+        ${n?`<button class="btn btn-ochre btn-sm" onclick="openLabourForQuote(${q.id})">Labour</button>`:''}
+      </div>
+    </div>`;
+  el.innerHTML = '<h3>Saved Quotations</h3>' + fin.map((q,i)=>card(q,i+1)).join('') + drafts.map(q=>card(q,0)).join('');
+}
+
+/* ---------------- Finalized mark (module) ---------------- */
+function migrateFinalized(){
+  // quotes that already have labour entries count as finalized (keeps old data working)
+  let changed = false;
+  quotes.forEach(q=>{
+    if(!q.finalizedAt && quoteHasEntries(q.id)){ q.finalizedAt = q.id; changed = true; }
+  });
+  if(changed) saveQuotes(quotes);
+}
+function toggleFinalized(id, on){
+  const q = quotes.find(x=>x.id===id);
+  if(!q) return;
+  if(on){
+    q.finalizedAt = Date.now();
+  } else {
+    if(quoteHasEntries(id)){
+      toast('Cannot un-finalize: this quotation has labour / received / materials entries');
+      renderSavedList();
+      return;
+    }
+    delete q.finalizedAt;
+  }
+  saveQuotes(quotes);
+  renderSavedList();
+}
+
+function viewQuote(id){
+  const q = quotes.find(x=>x.id===id);
+  currentPreviewQuote = q;
+  renderPreview(q);
+  showOnly('view-preview');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+}
+
+function editQuote(id){
+  const q = quotes.find(x=>x.id===id);
+  editingQuoteId = id;
+  document.getElementById('custName').value = q.custName;
+  document.getElementById('custAddress').value = q.custAddress;
+  document.getElementById('custContact').value = q.custContact;
+  document.getElementById('siteLength').value = q.siteLength;
+  document.getElementById('siteWidth').value = q.siteWidth;
+  calcSiteArea();
+
+  headings = q.headings.map(h=>({
+    id: headingSeq++,
+    name: h.name,
+    rate: h.rate,
+    lump: !!h.lump,
+    lumpAmt: h.lumpAmt || 0,
+    kind: h.kind || '',
+    areaIn: h.areaIn !== undefined ? !!h.areaIn : (h.amtIn||0) > 0,
+    areaEx: h.areaEx !== undefined ? !!h.areaEx : (h.amtEx||0) > 0,
+    paintGrade: h.paintGrade || '',
+    deduction: h.deduction || 0,
+    rows: (h.rows && h.rows.length ? h.rows : [{length:'',height:'',nos:1,sqft:0}]).map(r=>({
+      id: rowSeq++,
+      length:r.length, height:r.height, nos:r.nos!==undefined?r.nos:1,
+      sqft: r.sqft!==undefined ? r.sqft : (parseFloat(r.length)||0)*(parseFloat(r.height)||0)*(parseFloat(r.nos)||0)
+    }))
+  }));
+
+  workDetails = defaultWorkDetails.map(label => ({label, checked: (q.workDetails||[]).includes(label)}));
+  // include any custom work-detail labels that aren't in the default list
+  (q.workDetails||[]).forEach(label=>{
+    if(!defaultWorkDetails.includes(label)) workDetails.push({label, checked:true, extra:true});
+  });
+  renderWorkDetails();
+
+  const enamel = (q.lsItems||[]).find(l=>l.label==='Wood & Grill Work' || l.label==='Enamel Work');
+  const wood = (q.lsItems||[]).find(l=>l.label==='Wood Polish');
+  document.getElementById('lsEnamelChk').checked = !!enamel;
+  document.getElementById('lsEnamelVal').value = enamel ? enamel.value : '';
+  document.getElementById('lsWoodChk').checked = !!wood;
+  document.getElementById('lsWoodVal').value = wood ? wood.value : '';
+
+  document.getElementById('paintChk').checked = !!(q.paintBrand);
+  document.getElementById('paintCompany').value = q.paintBrand ? (q.paintBrand.company||'') : '';
+
+  renderHeadings();
+  switchTab('new');
+  refreshSaveButtons();
+  toast('Loaded for editing');
+}
+
+function deleteQuote(id){
+  if(!confirm('Delete this quotation? Its labour, cash received and materials entries will be deleted too.')) return;
+  quotes = quotes.filter(q=>q.id!==id);
+  saveQuotes(quotes);
+  labourEntries = labourEntries.filter(e=>e.quoteId!==id);
+  saveLabourData(labourEntries);
+  ['rec','mat'].forEach(k=>{ LB[k].data = LB[k].data.filter(e=>e.quoteId!==id); lbSaveAll(k); });
+  renderSavedList();
+  toast('Deleted');
+}
+
+/* ---------------- Backup / restore ---------------- */
+function exportBackup(){
+  if(VIEW_ONLY){ toast('Go back to the current year first'); return; }
+  const data = { app:'painting-quotation', savedAt:new Date().toISOString(), profile, quotes, labourEntries, receipts: LB.rec.data, materials: LB.mat.data };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'painting-quotation-' + new Date().getFullYear() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup file downloaded');
+}
+
+function importBackup(evt){
+  if(VIEW_ONLY){ toast('Go back to the current year first'); return; }
+  const file = evt.target.files[0];
+  evt.target.value = '';               // lets the same file be chosen again
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let data;
+    try{ data = JSON.parse(e.target.result); }catch(err){ data = null; }
+    const ok = data && (data.app==='painting-quotation' || (!data.app && (data.profile || Array.isArray(data.quotes))));
+    if(!ok){ msgBox('Restore failed','This is not a Painting Quotation backup file. Nothing was changed.'); return; }
+    msgBox('Restore backup','Restore '+file.name+'?\nThis replaces the data on this device.', ()=>{
+      try{
+        applyRestore(data);
+        renderProfileView();
+        document.querySelector('.tabs').style.display='flex';
+        if(profile) initApp();
+        msgBox('Restored','Backup restored.');
+      }catch(err){ msgBox('Restore failed', err.message); }
+    });
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- Start fresh ---------------- */
+function startFreshQuote(skipConfirm){
+  if(!skipConfirm && (headings.length>0 || document.getElementById('custName').value.trim())){
+    if(!confirm('Clear the current form and start a new blank quotation?')) return;
+  }
+  headings = [];
+  editingQuoteId = null;
+  document.getElementById('custName').value='';
+  document.getElementById('custAddress').value='';
+  document.getElementById('custContact').value='';
+  document.getElementById('siteLength').value='';
+  document.getElementById('siteWidth').value='';
+  document.getElementById('lsEnamelChk').checked=false;
+  document.getElementById('lsEnamelVal').value='';
+  document.getElementById('lsWoodChk').checked=false;
+  document.getElementById('lsWoodVal').value='';
+  document.getElementById('paintChk').checked=false;
+  document.getElementById('paintCompany').value='';
+  calcSiteArea();
+  workDetails = defaultWorkDetails.map(label => ({label, checked:false}));
+  renderWorkDetails();
+  renderHeadings();
+  switchTab('new');
+  refreshSaveButtons();
+  toast('Ready for a new quotation');
+}
+
+/* ---------------- Edit mode buttons: Update / Save as new / Cancel ---------------- */
+function refreshSaveButtons(){
+  const ed = !!editingQuoteId;
+  document.getElementById('finishBtn').innerHTML = ed ? '✓ Update &amp; Preview' : '✓ Finish &amp; Preview Quotation';
+  document.getElementById('cancelEditBtn').style.display = ed ? 'block' : 'none';
+}
+function cancelEdit(){
+  startFreshQuote(true);
+  switchTab('saved');
+  toast('Edit closed — last saved version kept');
+}
+
+/* ---------------- Labour module ---------------- */
+function todayStr(){
+  const d = new Date();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear()+'-'+m+'-'+day;
+}
+function formatDate(iso){
+  if(!iso) return '';
+  const parts = iso.split('-');
+  if(parts.length!==3) return iso;
+  return parts[2]+'-'+parts[1]+'-'+parts[0];
+}
+
+function updateLabourTotalPreview(){
+  const nos = parseFloat(document.getElementById('labNos').value)||0;
+  const rate = parseFloat(document.getElementById('labRate').value)||0;
+  const misc = parseFloat(document.getElementById('labMisc').value)||0;
+  const total = nos*rate + misc;
+  document.getElementById('labTotalPreview').textContent = '₹'+total.toFixed(2);
+}
+
+function openLabourForQuote(quoteId){
+  const q = quotes.find(x=>x.id===quoteId);
+  if(!q){ toast('Quotation not found'); return; }
+  currentLabourQuoteId = quoteId;
+  document.getElementById('labourCustName').textContent = q.custName + ' — ' + q.date + ' — ₹' + q.netAmount.toFixed(2);
+  resetLabourForm();
+  lbReset('rec'); lbReset('mat');
+  renderLabourList();
+  lbRender('rec'); lbRender('mat');
+  showOnly('view-labour');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+}
+
+function resetLabourForm(){
+  editingLabourId = null;
+  dpSet('labDate', todayStr());
+  document.getElementById('labNos').value = '';
+  document.getElementById('labRate').value = '';
+  document.getElementById('labMisc').value = '';
+  updateLabourTotalPreview();
+  document.getElementById('labourFormTitle').textContent = 'Add Labour Entry';
+  document.getElementById('labCancelBtn').style.display = 'none';
+}
+
+function saveLabourEntry(){
+  const date = dpGet('labDate');
+  const nos = parseFloat(document.getElementById('labNos').value)||0;
+  const rate = parseFloat(document.getElementById('labRate').value)||0;
+  const misc = parseFloat(document.getElementById('labMisc').value)||0;
+  if(!date){ toast('Enter a valid date (DD-MM-YYYY)'); return; }
+  if(nos<=0){ toast('Enter number of labours'); return; }
+  const total = nos*rate + misc;
+  const entry = { id: editingLabourId || Date.now(), quoteId: currentLabourQuoteId, date, nos, rate, misc, total };
+  if(editingLabourId){
+    labourEntries = labourEntries.map(e=>e.id===editingLabourId ? entry : e);
+  } else {
+    labourEntries.push(entry);
+  }
+  saveLabourData(labourEntries);
+  resetLabourForm();
+  renderLabourList();
+  toast('Labour entry saved!');
+}
+
+function renderLabourList(){
+  const el = document.getElementById('labourList');
+  const scoped = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId);
+  if(scoped.length===0){
+    el.innerHTML = `<h3>Labour Records</h3><div class="empty"><div class="big">👷</div>No labour entries yet for this customer.</div>`;
+  } else {
+    const sorted = scoped.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+    el.innerHTML = '<h3>Labour Records</h3>' + sorted.map(e=>`
+      <div class="quote-item">
+        <div>
+          <div class="who">${formatDate(e.date)}</div>
+          <div class="meta">${e.nos} labour(s) × ₹${e.rate} + Misc ₹${e.misc.toFixed(2)} · <span class="chip">₹${e.total.toFixed(2)}</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="viewLabourEntry(${e.id})">View</button>
+          <button class="btn btn-outline btn-sm" onclick="editLabourEntry(${e.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLabourEntry(${e.id})">Del</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  const totalNos = scoped.reduce((s,e)=>s+e.nos,0);
+  const totalAmt = scoped.reduce((s,e)=>s+e.total,0);
+  document.getElementById('labourGrandNos').textContent = totalNos;
+  document.getElementById('labourGrandAmount').textContent = '₹'+totalAmt.toFixed(2);
+  renderLabourSummary();
+}
+
+function editLabourEntry(id){
+  const e = labourEntries.find(x=>x.id===id);
+  if(!e) return;
+  editingLabourId = id;
+  dpSet('labDate', e.date);
+  document.getElementById('labNos').value = e.nos;
+  document.getElementById('labRate').value = e.rate;
+  document.getElementById('labMisc').value = e.misc;
+  updateLabourTotalPreview();
+  document.getElementById('labourFormTitle').textContent = 'Edit Labour Entry';
+  document.getElementById('labCancelBtn').style.display = 'inline-block';
+  toast('Loaded for editing');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function deleteLabourEntry(id){
+  if(!confirm('Delete this labour entry?')) return;
+  labourEntries = labourEntries.filter(e=>e.id!==id);
+  saveLabourData(labourEntries);
+  renderLabourList();
+  toast('Deleted');
+}
+
+function viewLabourEntry(id){
+  const e = labourEntries.find(x=>x.id===id);
+  if(!e) return;
+  const q = quotes.find(x=>x.id===e.quoteId);
+  currentLabourView = e;
+  document.getElementById('labourDocPreview').innerHTML = `
+    <div class="doc-head" style="border-bottom-color:var(--teal);">
+      <div class="biz"><h2>Labour Entry</h2><div class="who">${q ? q.custName+' · ' : ''}${formatDate(e.date)}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>No. of Labours</th><th>Rate</th><th>Miscellaneous</th><th>Total</th></tr></thead>
+      <tbody><tr>
+        <td>${e.nos}</td>
+        <td>₹${e.rate}</td>
+        <td>₹${e.misc.toFixed(2)}</td>
+        <td><b>₹${e.total.toFixed(2)}</b></td>
+      </tr></tbody>
+    </table>
+    <div class="doc-net"><span>Total Amount</span><span>₹${e.total.toFixed(2)}</span></div>
+  `;
+  showOnly('view-labour-detail');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+}
+
+function editLabourFromDetail(){
+  if(!currentLabourView) return;
+  editLabourEntry(currentLabourView.id);
+  showOnly('view-labour');
+}
+
+function deleteLabourFromDetail(){
+  if(!currentLabourView) return;
+  const id = currentLabourView.id;
+  if(!confirm('Delete this labour entry?')) return;
+  labourEntries = labourEntries.filter(e=>e.id!==id);
+  saveLabourData(labourEntries);
+  renderLabourList();
+  showOnly('view-labour');
+  toast('Deleted');
+}
+
+function labourPreviewPdf(){
+  const e = currentLabourView;
+  if(!e){ toast('No entry to export'); return; }
+  if(!window.jspdf){ toast('PDF library not loaded — check your internet connection'); return; }
+  const q = quotes.find(x=>x.id===e.quoteId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const marginX = 40;
+  let y = 50;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Labour Entry', marginX, y); y += 20;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  if(q){ doc.text('Customer: '+q.custName, marginX, y); y += 16; }
+  doc.text('Date: '+formatDate(e.date), marginX, y); y += 26;
+
+  const colX = [marginX, marginX+150, marginX+280, marginX+410];
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('No. of Labours', colX[0], y);
+  doc.text('Rate', colX[1], y);
+  doc.text('Miscellaneous', colX[2], y);
+  doc.text('Total', colX[3], y);
+  y += 6;
+  doc.setLineWidth(0.5);
+  doc.line(marginX, y, 555, y);
+  y += 16;
+
+  doc.setFont('helvetica','normal');
+  doc.text(String(e.nos), colX[0], y);
+  doc.text('Rs.'+e.rate, colX[1], y);
+  doc.text('Rs.'+e.misc.toFixed(2), colX[2], y);
+  doc.text('Rs.'+e.total.toFixed(2), colX[3], y);
+  y += 24;
+
+  doc.setLineWidth(1);
+  doc.line(marginX, y, 555, y);
+  y += 20;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('Total Amount: Rs.'+e.total.toFixed(2), marginX, y);
+
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  toast('PDF ready — opened in a new tab');
+}
+
+
+/* ---------------- Small date picker (module) — DD-MM-YYYY ---------------- */
+function escH(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function dpHtml(id){ return `<div class="dp"><input type="text" id="${id}" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('${id}')">📅</button></div>`; }
+function dpMask(el){
+  let v = el.value.replace(/[^0-9]/g,'').slice(0,8);
+  if(v.length>4) v = v.slice(0,2)+'-'+v.slice(2,4)+'-'+v.slice(4);
+  else if(v.length>2) v = v.slice(0,2)+'-'+v.slice(2);
+  el.value = v;
+}
+function dpGet(id){
+  const m = document.getElementById(id).value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if(!m) return '';
+  const d=+m[1], mo=+m[2], y=+m[3], dt=new Date(y,mo-1,d);
+  if(dt.getFullYear()!==y || dt.getMonth()!==mo-1 || dt.getDate()!==d) return '';
+  return m[3]+'-'+m[2]+'-'+m[1];
+}
+function dpSet(id, iso){
+  const el = document.getElementById(id);
+  if(!iso){ el.value=''; return; }
+  const p = iso.split('-'); el.value = p[2]+'-'+p[1]+'-'+p[0];
+}
+let dpState = null;
+function dpOpen(id){
+  const p = (dpGet(id) || todayStr()).split('-');
+  dpState = {id, y:+p[0], m:+p[1]-1, sel:dpGet(id)};
+  dpDraw();
+}
+function dpNav(n){ dpState.m += n; if(dpState.m<0){dpState.m=11;dpState.y--;} if(dpState.m>11){dpState.m=0;dpState.y++;} dpDraw(); }
+function dpClose(){ const o=document.getElementById('dpPop'); if(o) o.remove(); dpState=null; }
+function dpPick(iso){ const id=dpState.id; dpClose(); dpSet(id, iso); }
+function dpDraw(){
+  const old = document.getElementById('dpPop'); if(old) old.remove();
+  const {y,m,sel} = dpState;
+  const first = new Date(y,m,1).getDay(), days = new Date(y,m+1,0).getDate();
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let cells = ['S','M','T','W','T','F','S'].map(d=>`<div class="dp-h">${d}</div>`).join('') + '<div></div>'.repeat(first);
+  for(let d=1; d<=days; d++){
+    const iso = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    cells += `<div class="dp-d ${iso===sel?'sel':''}" onclick="dpPick('${iso}')">${d}</div>`;
+  }
+  const o = document.createElement('div'); o.className='mbx'; o.id='dpPop';
+  o.innerHTML = `<div class="mbx-card" style="padding:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <button class="btn btn-outline btn-sm" onclick="dpNav(-1)">‹</button><b>${names[m]} ${y}</b><button class="btn btn-outline btn-sm" onclick="dpNav(1)">›</button>
+    </div>
+    <div class="dp-grid">${cells}</div>
+    <button class="btn btn-outline btn-sm" onclick="dpPick(todayStr())">Today</button>
+    <button class="btn btn-ghost btn-sm" onclick="dpClose()">Close</button></div>`;
+  o.addEventListener('click', e=>{ if(e.target===o) dpClose(); });
+  document.body.appendChild(o);
+}
+
+/* ---------------- Cash Received + Materials Used (module) ---------------- */
+function lbLoad(k){ try{ return JSON.parse(localStorage.getItem(k)) || []; }catch(e){ return []; } }
+const LB = {
+  rec:{ key:'bs_receipts', title:'Cash Received', amtLabel:'Amount', hasBill:false, data:lbLoad('bs_receipts') },
+  mat:{ key:'bs_materials', title:'Materials Used', amtLabel:'Paid Amount', hasBill:true, data:lbLoad('bs_materials') }
+};
+const lbEditing = { rec:null, mat:null };
+function lbSaveAll(kind){ if(VIEW_ONLY) return; localStorage.setItem(LB[kind].key, JSON.stringify(LB[kind].data)); }
+function quoteHasEntries(id){
+  return labourEntries.some(e=>e.quoteId===id) || LB.rec.data.some(e=>e.quoteId===id) || LB.mat.data.some(e=>e.quoteId===id);
+}
+function lbInit(){
+  ['rec','mat'].forEach(kind=>{
+    const c = LB[kind], p = 'lb-'+kind;
+    document.getElementById('lbBox-'+kind).innerHTML = `
+      <h3 id="${p}-title">${c.title}</h3>
+      <div class="row2">
+        <div class="field"><label>Date</label>${dpHtml(p+'-date')}</div>
+        ${c.hasBill ? `<div class="field"><label>Bill Number</label><input type="text" id="${p}-bill"></div>` : ''}
+      </div>
+      <div class="row2">
+        <div class="field"><label>${c.amtLabel} (₹)</label><input type="number" id="${p}-amount" placeholder="0"></div>
+        <div class="field"><label>Type</label><select id="${p}-type"><option>Cash</option><option>UPI</option><option>Bank</option></select></div>
+      </div>
+      <div class="field"><label>Note</label><input type="text" id="${p}-note"></div>
+      <div class="footer-actions">
+        <button class="btn btn-teal" onclick="lbSave('${kind}')">💾 Save Entry</button>
+        <button class="btn btn-ghost" id="${p}-cancel" style="display:none;" onclick="lbReset('${kind}')">Cancel Edit</button>
+      </div>
+      <div id="${p}-list" style="margin-top:12px;"></div>`;
+  });
+}
+function lbReset(kind){
+  const p = 'lb-'+kind;
+  lbEditing[kind] = null;
+  dpSet(p+'-date', todayStr());
+  document.getElementById(p+'-amount').value = '';
+  document.getElementById(p+'-type').value = 'Cash';
+  document.getElementById(p+'-note').value = '';
+  if(LB[kind].hasBill) document.getElementById(p+'-bill').value = '';
+  document.getElementById(p+'-title').textContent = LB[kind].title;
+  document.getElementById(p+'-cancel').style.display = 'none';
+}
+function lbSave(kind){
+  const p = 'lb-'+kind, c = LB[kind];
+  const date = dpGet(p+'-date');
+  const amount = parseFloat(document.getElementById(p+'-amount').value)||0;
+  if(!date){ toast('Enter a valid date (DD-MM-YYYY)'); return; }
+  if(amount<=0){ toast('Enter the amount'); return; }
+  const entry = {
+    id: lbEditing[kind] || Date.now(), quoteId: currentLabourQuoteId, date, amount,
+    type: document.getElementById(p+'-type').value,
+    note: document.getElementById(p+'-note').value.trim(),
+    bill: c.hasBill ? document.getElementById(p+'-bill').value.trim() : ''
+  };
+  if(lbEditing[kind]) c.data = c.data.map(e=>e.id===lbEditing[kind] ? entry : e);
+  else c.data.push(entry);
+  lbSaveAll(kind);
+  lbReset(kind);
+  lbRender(kind);
+  toast(c.title+' saved!');
+}
+function lbEdit(kind, id){
+  const p = 'lb-'+kind, e = LB[kind].data.find(x=>x.id===id);
+  if(!e) return;
+  lbEditing[kind] = id;
+  dpSet(p+'-date', e.date);
+  document.getElementById(p+'-amount').value = e.amount;
+  document.getElementById(p+'-type').value = e.type;
+  document.getElementById(p+'-note').value = e.note||'';
+  if(LB[kind].hasBill) document.getElementById(p+'-bill').value = e.bill||'';
+  document.getElementById(p+'-title').textContent = 'Edit '+LB[kind].title+' Entry';
+  document.getElementById(p+'-cancel').style.display = 'inline-block';
+  document.getElementById('lbBox-'+kind).scrollIntoView({behavior:'smooth'});
+}
+function lbDel(kind, id){
+  if(!confirm('Delete this entry?')) return;
+  LB[kind].data = LB[kind].data.filter(e=>e.id!==id);
+  lbSaveAll(kind);
+  lbRender(kind);
+  toast('Deleted');
+}
+function lbScoped(kind){ return LB[kind].data.filter(e=>e.quoteId===currentLabourQuoteId); }
+function lbRender(kind){
+  const el = document.getElementById('lb-'+kind+'-list');
+  const list = lbScoped(kind).sort((a,b)=> new Date(b.date) - new Date(a.date));
+  const total = list.reduce((s,e)=>s+e.amount,0);
+  el.innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' :
+    list.map(e=>`
+      <div class="quote-item">
+        <div>
+          <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.amount.toFixed(2)}</span></div>
+          <div class="meta">${e.type}${e.bill?' · Bill '+escH(e.bill):''}${e.note?' · '+escH(e.note):''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="lbEdit('${kind}',${e.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="lbDel('${kind}',${e.id})">Del</button>
+        </div>
+      </div>`).join('') + `<div class="sum-row big"><span>Total ${LB[kind].title}</span><span>₹${total.toFixed(2)}</span></div>`;
+  renderLabourSummary();
+}
+function renderLabourSummary(){
+  const el = document.getElementById('labSummary');
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  if(!el || !q) return;
+  const sum = a => a.reduce((s,e)=>s+e.amount,0);
+  const rec = sum(lbScoped('rec')), mat = sum(lbScoped('mat'));
+  const lab = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId).reduce((s,e)=>s+e.total,0);
+  const bal = q.netAmount - rec, net = rec - lab - mat;
+  const row = (l,v,cls) => `<div class="sum-row ${cls||''}"><span>${l}</span><span>₹${v.toFixed(2)}</span></div>`;
+  el.innerHTML = '<h3>Account Summary</h3>' + row('Quotation amount', q.netAmount) + row('Received so far', rec) +
+    row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials total', mat) +
+    row('Net (received − labour − materials)', net, 'big');
+}
+lbInit();
+
+/* ---------------- Account statement: WhatsApp copy + PDFs (module) ---------------- */
+function acctData(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  if(!q) return null;
+  const asc = (a,b)=> new Date(a.date) - new Date(b.date);
+  const rec = lbScoped('rec').sort(asc), mat = lbScoped('mat').sort(asc);
+  const lab = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId).sort(asc);
+  const sum = (a,f)=> a.reduce((t,e)=>t+f(e),0);
+  const recT = sum(rec,e=>e.amount), matT = sum(mat,e=>e.amount), labT = sum(lab,e=>e.total);
+  return {q, rec, mat, lab, recT, matT, labT, bal:q.netAmount-recT, net:recT-labT-matT};
+}
+function customerStatementText(){
+  const d = acctData();
+  const L = ['*Payment Statement*'];
+  if(profile && profile.company) L.push(profile.company);
+  L.push('Customer: '+d.q.custName, 'Quotation date: '+d.q.date, 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
+  if(d.rec.length){
+    L.push('*Received:*');
+    d.rec.forEach(e=>L.push('- '+formatDate(e.date)+': Rs.'+e.amount.toFixed(2)+' ('+e.type+')'+(e.note?' '+e.note:'')));
+    L.push('Total received: Rs.'+d.recT.toFixed(2), '');
+  }
+  L.push('*Balance to receive: Rs.'+d.bal.toFixed(2)+'*');
+  return L.join('\n');
+}
+function copyCustomerStatement(){
+  if(!acctData()){ toast('Quotation not found'); return; }
+  const text = customerStatementText();
+  const done = ()=>toast('Copied! Paste it in WhatsApp');
+  navigator.clipboard.writeText(text).then(done).catch(()=>{
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); done();
+  });
+}
+function acctPdf(mode){
+  const d = acctData();
+  if(!d){ toast('Quotation not found'); return; }
+  if(!window.jspdf){ toast('PDF library not loaded — check your internet connection'); return; }
+  const full = mode==='full';
+  const doc = new window.jspdf.jsPDF({unit:'pt', format:'a4'});
+  const mx = 40, ph = doc.internal.pageSize.getHeight();
+  let y = 50;
+  const ensure = n => { if(y+n > ph-40){ doc.addPage(); y = 50; } };
+  const line = (label, val, bold) => {
+    ensure(16); doc.setFont('helvetica', bold?'bold':'normal'); doc.setFontSize(bold?12:10);
+    doc.text(label, mx, y); doc.text('Rs.'+val.toFixed(2), 555, y, {align:'right'}); y += bold?18:15;
+  };
+  const table = (title, heads, xs, rows) => {
+    if(!rows.length) return;
+    ensure(50); y += 8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(title, mx, y); y += 14;
+    doc.setFontSize(9); heads.forEach((h,i)=>doc.text(h, xs[i], y)); y += 4;
+    doc.setLineWidth(0.5); doc.line(mx, y, 555, y); y += 12;
+    doc.setFont('helvetica','normal');
+    rows.forEach(r=>{ ensure(14); r.forEach((c,i)=>doc.text(String(c).slice(0,i===r.length-1&&r.length>4?34:26), xs[i], y)); y += 14; });
+  };
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text(full ? 'Account Statement (internal)' : 'Payment Statement', mx, y); y += 20;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  if(profile && profile.company){ doc.text(profile.company, mx, y); y += 14; }
+  doc.text('Customer: '+d.q.custName, mx, y); y += 14;
+  doc.text('Quotation date: '+d.q.date, mx, y); y += 20;
+
+  line('Quotation amount', d.q.netAmount);
+  line('Received so far', d.recT);
+  line('Balance to receive', d.bal, true);
+  if(full){
+    y += 6;
+    line('Labour total', d.labT);
+    line('Materials total', d.matT);
+    line('Net (received - labour - materials)', d.net, true);
+  }
+
+  table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
+    d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
+  if(full){
+    table('Labour', ['Date','No. of Labour','Rate','Misc','Total'], [mx, mx+90, mx+180, mx+260, mx+350],
+      d.lab.map(e=>[formatDate(e.date), e.nos, 'Rs.'+e.rate, 'Rs.'+e.misc.toFixed(2), 'Rs.'+e.total.toFixed(2)]));
+    table('Materials Used', ['Date','Bill No.','Amount','Type','Note'], [mx, mx+90, mx+180, mx+270, mx+330],
+      d.mat.map(e=>[formatDate(e.date), e.bill||'-', 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
+  }
+  const url = URL.createObjectURL(doc.output('blob'));
+  window.open(url, '_blank');
+  toast('PDF ready — opened in a new tab');
+}
+
+/* ---------------- Lump Sum / Only Labour heading box (module) ---------------- */
+function lsParts(h){
+  const inn = h.areaIn!==undefined ? h.areaIn : (h.amtIn||0) > 0;
+  const ex  = h.areaEx!==undefined ? h.areaEx : (h.amtEx||0) > 0;
+  const area = [inn?'Interior':'', ex?'Exterior':''].filter(Boolean).join(' & ');
+  return [{ label: h.name + (area ? ' – '+area : ''), amt: savedHeadAmt(h) }];
+}
+function lsArea(hid, field, on){
+  headings.find(x=>x.id===hid)[field] = !!on;
+  renderHeadings(true);
+}
+function lsCardHtml(h, col){
+  return `
+    <div class="heading-head">
+      <div class="swatchbar"><span class="swatch" style="background:${col}"></span><span class="name">${escH(h.name)}</span></div>
+      <div>
+        <button class="icon-btn" onclick="renameHeading(${h.id})" title="Rename">✎</button>
+        <button class="icon-btn danger" onclick="deleteHeading(${h.id})" title="Delete">🗑</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:18px;margin:8px 0;">
+      <label class="fin-row"><input type="checkbox" ${h.areaIn?'checked':''} onchange="lsArea(${h.id},'areaIn',this.checked)"> Interior</label>
+      <label class="fin-row"><input type="checkbox" ${h.areaEx?'checked':''} onchange="lsArea(${h.id},'areaEx',this.checked)"> Exterior</label>
+    </div>
+    <div class="totals">
+      <div>
+        <label style="margin-bottom:2px;">Lumpsum Amount (₹)</label>
+        <input type="number" style="width:140px;" value="${h.lumpAmt||''}" placeholder="0" onchange="updateLumpAmt(${h.id}, this.value)">
+      </div>
+      <div style="text-align:right;"><div class="amt">₹${(parseFloat(h.lumpAmt)||0).toFixed(2)}</div></div>
+    </div>`;
+}
+
+/* ---------------- Google Drive backup (module) ---------------- */
+const G_CLIENT_ID='978793704970-e1isrkd8too2qlistrtpqdgn8oj2h98j.apps.googleusercontent.com';
+const G_FOLDER='ASM Backups', G_PREFIX='painting-quotation-', LS_DRIVE_LAST='bs_drive_last';
+let gToken=null, gTokenExp=0;
+
+function msgBox(title,msg,onOk){
+  const d=document.createElement('div'); d.className='mbx';
+  d.innerHTML='<div class="mbx-card"><h3></h3><p></p><button class="btn btn-primary" id="mbxOk">OK</button>'+(onOk?'<button class="btn btn-outline" id="mbxNo">Cancel</button>':'')+'</div>';
+  d.querySelector('h3').textContent=title; d.querySelector('p').textContent=msg;
+  document.body.appendChild(d);
+  d.querySelector('#mbxOk').onclick=()=>{ d.remove(); if(onOk) onOk(); };
+  const no=d.querySelector('#mbxNo'); if(no) no.onclick=()=>d.remove();
+}
+function renderDriveLast(){
+  const el=document.getElementById('driveLast'); if(!el) return;
+  const t=localStorage.getItem(LS_DRIVE_LAST);
+  el.textContent=t? new Date(t).toLocaleString('en-IN'):'never';
+}
+function driveAuth(){
+  return new Promise((res,rej)=>{
+    if(gToken && Date.now()<gTokenExp) return res(gToken);
+    if(!(window.google && google.accounts && google.accounts.oauth2)) return rej(new Error('Google sign-in not loaded. Check internet and open the app in Chrome.'));
+    const c=google.accounts.oauth2.initTokenClient({
+      client_id:G_CLIENT_ID, scope:'https://www.googleapis.com/auth/drive.file',
+      callback:r=>{ if(r.error) return rej(new Error('Sign-in failed')); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(gToken); },
+      error_callback:e=>rej(new Error('Sign-in cancelled'))
+    });
+    c.requestAccessToken();
+  });
+}
+async function gApi(url,opt){
+  opt=opt||{}; const t=await driveAuth();
+  const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+t})}));
+  if(!r.ok) throw new Error('Drive error '+r.status);
+  return r;
+}
+async function driveList(q,extra){
+  const r=await gApi('https://www.googleapis.com/drive/v3/files?q='+encodeURIComponent(q)+'&fields=files(id,name,modifiedTime)'+(extra||''));
+  return (await r.json()).files||[];
+}
+async function driveFolderId(){
+  const f=await driveList("name='"+G_FOLDER+"' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  if(f.length) return f[0].id;
+  const r=await gApi('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:G_FOLDER,mimeType:'application/vnd.google-apps.folder'})});
+  return (await r.json()).id;
+}
+async function driveUploadJson(name, data){
+  const fid = await driveFolderId();
+  const f = await driveList("name='"+name+"' and '"+fid+"' in parents and trashed=false");
+  const body = JSON.stringify(data);
+  if(f.length){
+    await gApi('https://www.googleapis.com/upload/drive/v3/files/'+f[0].id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body});
+  } else {
+    const b = 'asmb'+Date.now();
+    const mp = '--'+b+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({name,parents:[fid]})+'\r\n--'+b+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+b+'--';
+    await gApi('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp});
+  }
+}
+async function driveBackupNow(){
+  if(VIEW_ONLY){ toast('Go back to the current year first'); return; }
+  try{
+    const name = G_PREFIX+new Date().getFullYear()+'.json';
+    await driveUploadJson(name, {app:'painting-quotation',savedAt:new Date().toISOString(),profile,quotes,labourEntries,receipts:LB.rec.data,materials:LB.mat.data});
+    localStorage.setItem(LS_DRIVE_LAST,new Date().toISOString()); renderDriveLast();
+    msgBox('Backup done','Saved to Google Drive:\nASM Backups / '+name);
+  }catch(e){ msgBox('Backup failed',e.message); }
+}
+function applyRestore(data){
+  if(!data || (!data.profile && !Array.isArray(data.quotes))) throw new Error('Not a valid backup file');
+  if(data.profile){ profile=data.profile; saveProfileData(profile); }
+  quotes = Array.isArray(data.quotes) ? data.quotes : [];                    saveQuotes(quotes);
+  labourEntries = Array.isArray(data.labourEntries) ? data.labourEntries : []; saveLabourData(labourEntries);
+  LB.rec.data = Array.isArray(data.receipts) ? data.receipts : [];           lbSaveAll('rec');
+  LB.mat.data = Array.isArray(data.materials) ? data.materials : [];         lbSaveAll('mat');
+}
+async function driveRestore(){
+  if(VIEW_ONLY){ toast('Go back to the current year first'); return; }
+  try{
+    const fid=await driveFolderId();
+    const f=await driveList("name contains '"+G_PREFIX+"' and '"+fid+"' in parents and trashed=false","&orderBy=modifiedTime desc");
+    if(!f.length) return msgBox('Nothing found','No painting-quotation backup in your Drive "ASM Backups" folder.');
+    const r=await gApi('https://www.googleapis.com/drive/v3/files/'+f[0].id+'?alt=media');
+    const data=await r.json();
+    if(!data || (!data.profile && !Array.isArray(data.quotes))) return msgBox('Restore failed','Not a valid backup file. Nothing was changed.');
+    msgBox('Restore from Drive','Restore '+f[0].name+'?\nThis replaces the data on this device.',()=>{
+      try{ applyRestore(data); initApp(); renderDriveLast(); msgBox('Restored','Data restored from Google Drive.'); }
+      catch(e){ msgBox('Restore failed',e.message); }
+    });
+  }catch(e){ msgBox('Restore failed',e.message); }
+}
+renderDriveLast();
+
+/* ---------------- Year Close + Old Year view-only (module) ---------------- */
+function yearFileName(){
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return G_PREFIX + p(d.getDate()) + '-' + p(d.getMonth()+1) + '-' + d.getFullYear() + '.json';
+}
+function downloadJson(name, data){
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function yearClose(){
+  if(VIEW_ONLY) return;
+  if(!quotes.length && !labourEntries.length && !LB.rec.data.length && !LB.mat.data.length){
+    msgBox('Nothing to close','There is no data to close.'); return;
+  }
+  const name = yearFileName();
+  msgBox('Close Year','Everything will be backed up to Google Drive as\n'+name+'\nand then cleared from this device. Your company details stay.\n\nContinue?', async ()=>{
+    try{
+      const data = {app:'painting-quotation', savedAt:new Date().toISOString(), profile, quotes, labourEntries, receipts:LB.rec.data, materials:LB.mat.data};
+      await driveUploadJson(name, data);          // if this fails, nothing is cleared
+      downloadJson(name, data);                    // same file also saved on this phone
+      quotes = []; saveQuotes(quotes);
+      labourEntries = []; saveLabourData(labourEntries);
+      LB.rec.data = []; lbSaveAll('rec');
+      LB.mat.data = []; lbSaveAll('mat');
+      startFreshQuote(true);
+      switchTab('new');
+      msgBox('Year closed','Backed up to Google Drive and saved on this phone:\n'+name+'\n\nA new year has started.');
+    }catch(e){ msgBox('Year close failed — nothing was cleared', e.message); }
+  });
+}
+function isPQBackup(d){ return d && (d.app==='painting-quotation' || (!d.app && (d.profile || Array.isArray(d.quotes)))); }
+function enterViewOnly(data, name){
+  VIEW_ONLY = true;                                   // from here nothing is saved to the device
+  if(data.profile) profile = data.profile;
+  quotes = Array.isArray(data.quotes) ? data.quotes : [];
+  labourEntries = Array.isArray(data.labourEntries) ? data.labourEntries : [];
+  LB.rec.data = Array.isArray(data.receipts) ? data.receipts : [];
+  LB.mat.data = Array.isArray(data.materials) ? data.materials : [];
+  document.body.classList.add('viewonly');
+  document.getElementById('voName').textContent = name;
+  document.querySelector('.tabs').style.display = 'flex';
+  switchTab('saved');
+}
+function viewOldYearFile(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    let d; try{ d = JSON.parse(e.target.result); }catch(err){ d = null; }
+    if(!isPQBackup(d)) return msgBox('Cannot open','This is not a Painting Quotation backup file.');
+    enterViewOnly(d, file.name);
+  };
+  r.readAsText(file);
+}
+async function viewOldYearDrive(){
+  try{
+    const fid = await driveFolderId();
+    const f = await driveList("name contains '"+G_PREFIX+"' and '"+fid+"' in parents and trashed=false","&orderBy=modifiedTime desc&pageSize=15");
+    if(!f.length) return msgBox('Nothing found','No painting-quotation files in your Drive "ASM Backups" folder.');
+    const o = document.createElement('div'); o.className='mbx';
+    o.innerHTML = '<div class="mbx-card"><h3>Open old year</h3><div id="oyList"></div><button class="btn btn-ghost" id="oyClose">Cancel</button></div>';
+    f.forEach(x=>{
+      const b = document.createElement('button');
+      b.className = 'btn btn-outline btn-block'; b.style.marginBottom = '6px'; b.textContent = x.name;
+      b.onclick = async ()=>{
+        try{
+          const d = await (await gApi('https://www.googleapis.com/drive/v3/files/'+x.id+'?alt=media')).json();
+          if(!isPQBackup(d)) return msgBox('Cannot open','This is not a Painting Quotation backup file.');
+          o.remove(); enterViewOnly(d, x.name);
+        }catch(e){ msgBox('Open failed', e.message); }
+      };
+      o.querySelector('#oyList').appendChild(b);
+    });
+    o.querySelector('#oyClose').onclick = ()=>o.remove();
+    document.body.appendChild(o);
+  }catch(e){ msgBox('Open failed', e.message); }
+}
+
+/* ---------------- Help panel (module) — works offline ---------------- */
+const HELP_TOPICS = [
+ {t:'Making a quotation', h:`<ul>
+  <li>First time: fill your company details once (Profile tab).</li>
+  <li>New Quote: enter customer and site details, then add headings (Interior, Exterior, Ceiling, Lump Sum, Only Labour or your own name).</li>
+  <li>Choose the paint brand and tick the work details.</li>
+  <li><b>Finish &amp; Preview</b> saves the quotation and shows the preview. From there you can make the PDF or copy the text for WhatsApp.</li>
+  <li>Press <b>Back to editing</b>, change something, then <b>Update &amp; Preview</b>: the same record is updated, no duplicate.</li>
+  <li>Saved tab: View, Edit or Del each quotation.</li></ul>`},
+ {t:'Headings and Lump Sum', h:`<ul>
+  <li><b>Interior, Exterior, Ceiling and custom headings:</b> add measurement rows (length, height, nos), the deduction for doors and windows, and the rate per sqft.</li>
+  <li><b>☐ Lumpsum</b> (top-right of the box): the rate box becomes one Lumpsum Amount. Untick to go back.</li>
+  <li><b>Lump Sum and Only Labour headings:</b> tick Interior and/or Exterior and enter one amount. No sqft is shown.</li></ul>`},
+ {t:'Work details', h:`<ul>
+  <li>All items start unticked in a new quotation. Tap an item to tick it.</li>
+  <li>Select All ticks everything.</li>
+  <li>Add extra item: type your own line and press + Add. It belongs to this quotation only. Tap ✕ on it to remove.</li></ul>`},
+ {t:'Finalized and Labour', h:`<ul>
+  <li>When the customer accepts, tick <b>Finalized</b> on that quotation in the Saved tab.</li>
+  <li>Finalized quotations go to the top, numbered #1, #2 in the order accepted.</li>
+  <li>The <b>Labour</b> button shows only on finalized quotations.</li>
+  <li>You cannot untick Finalized once labour, cash received or materials entries exist.</li>
+  <li>Same customer with two sites is simply two separate quotations.</li></ul>`},
+ {t:'Labour, Cash Received, Materials', h:`<ul>
+  <li>The Labour screen has three blocks: Labour, Cash Received and Materials Used. Dates are DD-MM-YYYY with a small 📅 picker.</li>
+  <li>The Account Summary shows quotation amount, received, <b>balance to receive</b>, labour, materials and net.</li>
+  <li><b>Copy Customer Copy to WhatsApp</b> and <b>Customer Copy PDF</b> show only amount, received entries and balance. Safe to send.</li>
+  <li><b>Full Account PDF</b> also shows your labour, materials and net. Keep it for yourself.</li></ul>`},
+ {t:'Backup and Restore', h:`<ul>
+  <li><b>Google Drive:</b> Profile tab, Backup Now. Sign in with Google (open the app in Chrome, not inside WhatsApp). The file is ASM Backups / painting-quotation-year and is overwritten each time.</li>
+  <li><b>Restore from Drive</b> asks for confirmation, then replaces the data on this phone.</li>
+  <li><b>Export Backup</b> saves painting-quotation-year.json on your phone. <b>Restore Backup</b> loads a file, also with confirmation.</li>
+  <li>Take a backup often, and always before clearing browser data.</li></ul>`},
+ {t:'Year Close and Old Years', h:`<ul>
+  <li><b>Close Year</b> (Profile tab) backs up everything to Drive as painting-quotation-DD-MM-YYYY and also saves it on your phone.</li>
+  <li>Only after the backup succeeds, quotations, labour, received and materials are cleared. Company details stay.</li>
+  <li><b>View Old Year</b> opens a closed year from Drive or a file as <b>view only</b>: you can look, make PDFs and copy WhatsApp text, but nothing can be added, edited or deleted.</li>
+  <li>Press <b>Back to current year</b> to return. Your current data is never touched while viewing.</li></ul>`},
+ {t:'Privacy', h:`<ul>
+  <li>Your quotations, customers and accounts are stored only on this phone, in the browser.</li>
+  <li>Google Drive backup is optional and goes only to your own Google Drive, in the folder ASM Backups. The app can open only the files it created.</li>
+  <li>Nothing is sent to the developer or any other server.</li>
+  <li>Questions: muralinarayanans@gmail.com</li></ul>`}
+];
+function helpClose(){ const o=document.getElementById('helpPop'); if(o) o.remove(); }
+function helpDraw(inner){
+  helpClose();
+  const o = document.createElement('div'); o.className='mbx'; o.id='helpPop';
+  o.innerHTML = '<div class="mbx-card help-card">'+inner+'</div>';
+  o.addEventListener('click', e=>{ if(e.target===o) helpClose(); });
+  document.body.appendChild(o);
+}
+function helpOpen(){
+  helpDraw('<div class="help-top"><h3 style="margin:0;">❓ Help</h3><button class="btn btn-ghost btn-sm" onclick="helpClose()">✕</button></div>' +
+    HELP_TOPICS.map((x,i)=>`<button class="btn btn-outline btn-block" style="margin-bottom:6px;text-align:left;" onclick="helpShow(${i})">${x.t}</button>`).join(''));
+}
+function helpShow(i){
+  helpDraw(`<div class="help-top"><button class="btn btn-outline btn-sm" onclick="helpOpen()">← Back</button><button class="btn btn-ghost btn-sm" onclick="helpClose()">✕</button></div><h3>${HELP_TOPICS[i].t}</h3>${HELP_TOPICS[i].h}`);
+}
+
+initApp();
+</script>
+</body>
+</html>
