@@ -206,6 +206,7 @@
   <div class="brushstroke"></div>
 
   <div id="voBanner" class="no-print">📂 Viewing old year: <b id="voName"></b> — view only <button class="btn btn-outline btn-sm" style="background:#fff;" onclick="location.reload()">Back to current year</button></div>
+  <div id="driveWarn" class="no-print" style="display:none;"></div>
   <div class="tabs no-print">
     <div class="tab active" data-tab="new">New Quote</div>
     <div class="tab" data-tab="saved">Saved</div>
@@ -2082,6 +2083,7 @@ const HELP_TOPICS = [
   <li><b>Google Drive:</b> Profile tab, Backup Now. Sign in with Google (open the app in Chrome, not inside WhatsApp). The file is ASM Backups / painting-quotation-year and is overwritten each time.</li>
   <li><b>Restore from Drive</b> asks for confirmation, then replaces the data on this phone.</li>
   <li><b>Export Backup</b> saves painting-quotation-year.json on your phone. <b>Restore Backup</b> loads a file, also with confirmation.</li>
+  <li>If your last Google Drive backup is more than 3 days old, a short warning shows when you open the app. Nothing is saved automatically.</li>
   <li>Take a backup often, and always before clearing browser data.</li></ul>`},
  {t:'Year Close and Old Years', h:`<ul>
   <li><b>Close Year</b> (Profile tab) backs up everything to Drive as painting-quotation-DD-MM-YYYY and also saves it on your phone.</li>
@@ -2109,6 +2111,26 @@ function helpOpen(){
 function helpShow(i){
   helpDraw(`<div class="help-top"><button class="btn btn-outline btn-sm" onclick="helpOpen()">← Back</button><button class="btn btn-ghost btn-sm" onclick="helpClose()">✕</button></div><h3>${HELP_TOPICS[i].t}</h3>${HELP_TOPICS[i].h}`);
 }
+
+/* ---- "not backed up" warning (isolated): shows 4 seconds when the app opens, only if the last Google Drive backup is older than 3 days ---- */
+const DRIVE_STALE_DAYS=3;
+let driveWarnTimer=null, driveWarnLastShown=0;
+function driveWarnIfStale(){
+  if(VIEW_ONLY) return;
+  const el=document.getElementById('driveWarn'); if(!el) return;
+  const t=localStorage.getItem(LS_DRIVE_LAST);
+  if(!t) return;                                   // Google Drive backup not used on this device
+  const last=Date.parse(t); if(!last) return;
+  if(Date.now()-last<DRIVE_STALE_DAYS*24*60*60*1000) return;
+  if(Date.now()-driveWarnLastShown<60*1000) return;   // no flicker if the app is switched quickly
+  driveWarnLastShown=Date.now();
+  el.textContent='⚠️ Not backed up to Google Drive recently. Go to Profile → Google Drive Backup.';
+  el.style.cssText='display:block;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:10px;padding:10px 14px;margin:10px 0;font-size:.85rem;font-weight:600;line-height:1.4;';
+  clearTimeout(driveWarnTimer);
+  driveWarnTimer=setTimeout(function(){ el.style.display='none'; el.textContent=''; },4000);
+}
+setTimeout(driveWarnIfStale,1500);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) driveWarnIfStale(); });
 
 initApp();
 </script>
