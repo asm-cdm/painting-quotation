@@ -139,6 +139,7 @@
 
   .wd-col-title{font-family:'Fraunces',serif;font-weight:700;font-size:.92rem;color:var(--teal-dark);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--ochre);}
   .dp{display:flex;gap:6px;} .dp input{flex:1;min-width:0;}
+  .dp-err input{border-color:#c0392b !important;background:#fdf1ef;} .dp-msg{font-size:.75rem;color:#c0392b;margin-top:3px;}
   .dp-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:0 10px;font-size:1rem;cursor:pointer;}
   .dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin:6px 0;}
   .dp-d{padding:7px 0;border-radius:6px;font-size:.85rem;cursor:pointer;} .dp-d:hover,.dp-d.sel{background:var(--teal);color:#fff;}
@@ -368,7 +369,7 @@
       <div class="row2">
         <div class="field">
           <label>Date</label>
-          <div class="dp"><input type="text" id="labDate" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('labDate')">📅</button></div>
+          <div class="dp"><input type="text" id="labDate" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('labDate')">📅</button></div><div class="dp-msg" id="labDate-msg"></div>
         </div>
         <div class="field">
           <label>No. of Labours</label>
@@ -938,7 +939,7 @@ function finishQuotation(){
 
   const quoteObj = {
     id: editingQuoteId || Date.now(),
-    date: new Date().toLocaleDateString('en-IN'),
+    date: todayDMY(),
     custName, custAddress, custContact,
     siteLength, siteWidth,
     headings: quoteHeadings,
@@ -997,7 +998,7 @@ function renderPreview(q){
         <h2>${profile.company}</h2>
         <div class="who">${profile.name} · ${profile.cell}</div>
       </div>
-      <div class="qmeta">Quotation Date<br><b>${q.date}</b></div>
+      <div class="qmeta">Quotation Date<br><b>${qd(q)}</b></div>
     </div>
     <div class="doc-cust">
       <b>To:</b> ${q.custName}<br>
@@ -1041,7 +1042,7 @@ function previewPdf(){
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
   doc.text('Painting Quotation', marginX, y); y += 20;
   doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.text('Date: '+q.date, marginX, y); y += 22;
+  doc.text('Date: '+qd(q), marginX, y); y += 22;
 
   doc.setFont('helvetica','bold'); doc.setFontSize(12);
   doc.text(q.custName, marginX, y); y += 16;
@@ -1136,7 +1137,7 @@ function buildWhatsappText(){
   const q = currentPreviewQuote;
   let lines = [];
   lines.push('*Painting Quotation*');
-  lines.push('Date: '+q.date);
+  lines.push('Date: '+qd(q));
   lines.push('');
   lines.push('*'+q.custName+'*');
   if(q.custAddress) lines.push(q.custAddress);
@@ -1199,7 +1200,7 @@ function renderSavedList(){
     <div class="quote-item ${n?'fin':''}">
       <div>
         <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
-        <div class="meta">${q.date} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
+        <div class="meta">${qd(q)} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
         <label class="fin-row"><input type="checkbox" ${n?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
       </div>
       <div class="actions">
@@ -1411,7 +1412,7 @@ function openLabourForQuote(quoteId){
   const q = quotes.find(x=>x.id===quoteId);
   if(!q){ toast('Quotation not found'); return; }
   currentLabourQuoteId = quoteId;
-  document.getElementById('labourCustName').textContent = q.custName + ' — ' + q.date + ' — ₹' + q.netAmount.toFixed(2);
+  document.getElementById('labourCustName').textContent = q.custName + ' — ' + qd(q) + ' — ₹' + q.netAmount.toFixed(2);
   resetLabourForm();
   lbReset('rec'); lbReset('mat');
   renderLabourList();
@@ -1432,11 +1433,11 @@ function resetLabourForm(){
 }
 
 function saveLabourEntry(){
-  const date = dpGet('labDate');
+  const date = dpCheck('labDate');
   const nos = parseFloat(document.getElementById('labNos').value)||0;
   const rate = parseFloat(document.getElementById('labRate').value)||0;
   const misc = parseFloat(document.getElementById('labMisc').value)||0;
-  if(!date){ toast('Enter a valid date (DD-MM-YYYY)'); return; }
+  if(!date) return;
   if(nos<=0){ toast('Enter number of labours'); return; }
   const total = nos*rate + misc;
   const entry = { id: editingLabourId || Date.now(), quoteId: currentLabourQuoteId, date, nos, rate, misc, total };
@@ -1592,12 +1593,13 @@ function labourPreviewPdf(){
 
 /* ---------------- Small date picker (module) — DD-MM-YYYY ---------------- */
 function escH(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function dpHtml(id){ return `<div class="dp"><input type="text" id="${id}" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('${id}')">📅</button></div>`; }
+function dpHtml(id){ return `<div class="dp"><input type="text" id="${id}" placeholder="DD-MM-YYYY" inputmode="numeric" maxlength="10" oninput="dpMask(this)"><button type="button" class="dp-btn" onclick="dpOpen('${id}')">📅</button></div><div class="dp-msg" id="${id}-msg"></div>`; }
 function dpMask(el){
   let v = el.value.replace(/[^0-9]/g,'').slice(0,8);
   if(v.length>4) v = v.slice(0,2)+'-'+v.slice(2,4)+'-'+v.slice(4);
   else if(v.length>2) v = v.slice(0,2)+'-'+v.slice(2);
   el.value = v;
+  dpLive(el);
 }
 function dpGet(id){
   const m = document.getElementById(id).value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
@@ -1608,8 +1610,62 @@ function dpGet(id){
 }
 function dpSet(id, iso){
   const el = document.getElementById(id);
-  if(!iso){ el.value=''; return; }
+  if(!iso){ el.value=''; dpShow(id,''); return; }
   const p = iso.split('-'); el.value = p[2]+'-'+p[1]+'-'+p[0];
+  dpShow(id,'');
+}
+
+/* ---------------- Date validation (module) — one place for all date fields ---------------- */
+const DP_YEARS_BACK = 5, DP_YEARS_AHEAD = 1;
+function qDateNorm(s){                      // any stored quotation date -> DD-MM-YYYY
+  s = String(s||'').trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m) return m[3]+'-'+m[2]+'-'+m[1];
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(m) return m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0')+'-'+m[3];
+  return s;
+}
+function qd(q){ return qDateNorm(q && q.date); }
+function qDateIso(q){ const m = qd(q).match(/^(\d{2})-(\d{2})-(\d{4})$/); return m ? m[3]+'-'+m[2]+'-'+m[1] : ''; }
+function fmtStamp(t){ const d=new Date(t), p=n=>String(n).padStart(2,'0'); return p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+function todayDMY(){ return formatDate(todayStr()); }
+function dpShow(id, msg){
+  const el = document.getElementById(id); if(!el) return;
+  const box = document.getElementById(id+'-msg');
+  if(el.parentNode) el.parentNode.classList.toggle('dp-err', !!msg);
+  if(box) box.textContent = msg || '';
+}
+function dpValidate(id){                    // hard rules: format, real date, year range
+  const v = document.getElementById(id).value.trim();
+  if(!v) return {ok:false, msg:'Date required (DD-MM-YYYY)'};
+  const iso = dpGet(id);
+  if(!/^\d{2}-\d{2}-\d{4}$/.test(v)) return {ok:false, msg:'Enter date as DD-MM-YYYY'};
+  if(!iso) return {ok:false, msg:'Invalid date - this day does not exist'};
+  const y = +iso.slice(0,4), cy = new Date().getFullYear();
+  if(y < cy-DP_YEARS_BACK || y > cy+DP_YEARS_AHEAD) return {ok:false, msg:'Year must be between '+(cy-DP_YEARS_BACK)+' and '+(cy+DP_YEARS_AHEAD)};
+  return {ok:true, iso};
+}
+function dpLive(el){                        // live feedback while typing
+  const v = el.value;
+  if(v.length < 10){ dpShow(el.id,''); return; }
+  const r = dpValidate(el.id);
+  dpShow(el.id, r.ok ? '' : r.msg);
+}
+function dpWarnings(iso){                   // soft rules: ask confirmation only
+  const w = [];
+  if(iso > todayStr()) w.push('This date is in the future.');
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  const qi = q ? qDateIso(q) : '';
+  if(qi && iso < qi) w.push('This date is before the quotation date ('+qd(q)+').');
+  return w;
+}
+function dpCheck(id){                       // use at save: returns ISO date or '' (blocked)
+  const r = dpValidate(id);
+  if(!r.ok){ dpShow(id, r.msg); toast(r.msg); const el=document.getElementById(id); if(el) el.focus(); return ''; }
+  dpShow(id,'');
+  const w = dpWarnings(r.iso);
+  if(w.length && !confirm(w.join('\n')+'\n\nSave anyway?')) return '';
+  return r.iso;
 }
 let dpState = null;
 function dpOpen(id){
@@ -1687,9 +1743,9 @@ function lbReset(kind){
 }
 function lbSave(kind){
   const p = 'lb-'+kind, c = LB[kind];
-  const date = dpGet(p+'-date');
+  const date = dpCheck(p+'-date');
   const amount = parseFloat(document.getElementById(p+'-amount').value)||0;
-  if(!date){ toast('Enter a valid date (DD-MM-YYYY)'); return; }
+  if(!date) return;
   if(amount<=0){ toast('Enter the amount'); return; }
   const entry = {
     id: lbEditing[kind] || Date.now(), quoteId: currentLabourQuoteId, date, amount,
@@ -1773,7 +1829,7 @@ function customerStatementText(){
   const d = acctData();
   const L = ['*Payment Statement*'];
   if(profile && profile.company) L.push(profile.company);
-  L.push('Customer: '+d.q.custName, 'Quotation date: '+d.q.date, 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
+  L.push('Customer: '+d.q.custName, 'Quotation date: '+qd(d.q), 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
   if(d.rec.length){
     L.push('*Received:*');
     d.rec.forEach(e=>L.push('- '+formatDate(e.date)+': Rs.'+e.amount.toFixed(2)+' ('+e.type+')'+(e.note?' '+e.note:'')));
@@ -1820,7 +1876,7 @@ function acctPdf(mode){
   doc.setFont('helvetica','normal'); doc.setFontSize(10);
   if(profile && profile.company){ doc.text(profile.company, mx, y); y += 14; }
   doc.text('Customer: '+d.q.custName, mx, y); y += 14;
-  doc.text('Quotation date: '+d.q.date, mx, y); y += 20;
+  doc.text('Quotation date: '+qd(d.q), mx, y); y += 20;
 
   line('Quotation amount', d.q.netAmount);
   line('Received so far', d.recT);
@@ -1894,7 +1950,7 @@ function msgBox(title,msg,onOk){
 function renderDriveLast(){
   const el=document.getElementById('driveLast'); if(!el) return;
   const t=localStorage.getItem(LS_DRIVE_LAST);
-  el.textContent=t? new Date(t).toLocaleString('en-IN'):'never';
+  el.textContent=t? fmtStamp(t):'never';
 }
 function driveAuth(){
   return new Promise((res,rej)=>{
