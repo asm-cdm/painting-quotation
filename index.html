@@ -1955,16 +1955,45 @@ function renderDriveLast(){
 const LS_DRIVE_FLAG='bs_drive_signed';   // set once after first successful Google sign-in
 function driveFlagGet(){ try{ return localStorage.getItem(LS_DRIVE_FLAG)==='1'; }catch(e){ return false; } }
 function driveFlagSet(v){ try{ if(v) localStorage.setItem(LS_DRIVE_FLAG,'1'); else localStorage.removeItem(LS_DRIVE_FLAG); }catch(e){} }
+const LS_DRIVE_EMAIL='bs_drive_email';   // Gmail used for Drive, remembered so Google skips the account list
+function driveEmailGet(){ try{ return localStorage.getItem(LS_DRIVE_EMAIL)||''; }catch(e){ return ''; } }
+function driveEmailSet(v){ try{ localStorage.setItem(LS_DRIVE_EMAIL,v); }catch(e){} }
+async function driveRememberEmail(token){
+  if(driveEmailGet()) return;
+  try{
+    const r=await fetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress)',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok) return;
+    const j=await r.json();
+    if(j && j.user && j.user.emailAddress) driveEmailSet(j.user.emailAddress);
+  }catch(e){}
+}
+let gClient=null, gWaiter=null;
 function driveAuth(){
   return new Promise((res,rej)=>{
     if(gToken && Date.now()<gTokenExp) return res(gToken);
     if(!(window.google && google.accounts && google.accounts.oauth2)) return rej(new Error('Google sign-in not loaded. Check internet and open the app in Chrome.'));
-    const c=google.accounts.oauth2.initTokenClient({
-      client_id:G_CLIENT_ID, scope:'https://www.googleapis.com/auth/drive.file',
-      callback:r=>{ if(r.error){ driveFlagSet(false); return rej(new Error('Sign-in failed')); } driveFlagSet(true); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(gToken); },
-      error_callback:e=>rej(new Error('Sign-in cancelled'))
-    });
-    c.requestAccessToken({prompt: driveFlagGet() ? '' : 'consent'});
+    if(!gClient){
+      gClient=google.accounts.oauth2.initTokenClient({
+        client_id:G_CLIENT_ID, scope:'https://www.googleapis.com/auth/drive.file',
+        callback:r=>{
+          if(r && r.access_token){
+            driveFlagSet(true);
+            gToken=r.access_token; gTokenExp=Date.now()+(Number(r.expires_in||3600)-60)*1000;
+            driveRememberEmail(gToken);
+            if(gWaiter){ gWaiter.res(gToken); gWaiter=null; }
+          } else {
+            driveFlagSet(false);
+            if(gWaiter){ gWaiter.rej(new Error('Sign-in failed')); gWaiter=null; }
+          }
+        },
+        error_callback:()=>{ if(gWaiter){ gWaiter.rej(new Error('Sign-in cancelled')); gWaiter=null; } }
+      });
+    }
+    gWaiter={res:res,rej:rej};
+    const o={prompt: driveFlagGet() ? '' : 'consent'};
+    const em=driveEmailGet();
+    if(em){ o.login_hint=em; o.hint=em; }
+    gClient.requestAccessToken(o);
   });
 }
 async function gApi(url,opt){
