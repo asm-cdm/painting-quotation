@@ -1952,16 +1952,19 @@ function renderDriveLast(){
   const t=localStorage.getItem(LS_DRIVE_LAST);
   el.textContent=t? fmtStamp(t):'never';
 }
+const LS_DRIVE_FLAG='bs_drive_signed';   // set once after first successful Google sign-in
+function driveFlagGet(){ try{ return localStorage.getItem(LS_DRIVE_FLAG)==='1'; }catch(e){ return false; } }
+function driveFlagSet(v){ try{ if(v) localStorage.setItem(LS_DRIVE_FLAG,'1'); else localStorage.removeItem(LS_DRIVE_FLAG); }catch(e){} }
 function driveAuth(){
   return new Promise((res,rej)=>{
     if(gToken && Date.now()<gTokenExp) return res(gToken);
     if(!(window.google && google.accounts && google.accounts.oauth2)) return rej(new Error('Google sign-in not loaded. Check internet and open the app in Chrome.'));
     const c=google.accounts.oauth2.initTokenClient({
       client_id:G_CLIENT_ID, scope:'https://www.googleapis.com/auth/drive.file',
-      callback:r=>{ if(r.error) return rej(new Error('Sign-in failed')); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(gToken); },
+      callback:r=>{ if(r.error){ driveFlagSet(false); return rej(new Error('Sign-in failed')); } driveFlagSet(true); gToken=r.access_token; gTokenExp=Date.now()+(r.expires_in-60)*1000; res(gToken); },
       error_callback:e=>rej(new Error('Sign-in cancelled'))
     });
-    c.requestAccessToken();
+    c.requestAccessToken({prompt: driveFlagGet() ? '' : 'consent'});
   });
 }
 async function gApi(url,opt){
