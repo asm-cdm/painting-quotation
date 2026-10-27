@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last edited by Claude: 17-10-2026 -->
+<!-- Last edited by Claude: 27-10-2026 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -161,7 +161,7 @@
   body.viewonly #lbBox-rec .row2, body.viewonly #lbBox-rec .field, body.viewonly #lbBox-rec .footer-actions,
   body.viewonly #lbBox-mat .row2, body.viewonly #lbBox-mat .field, body.viewonly #lbBox-mat .footer-actions,
   body.viewonly #view-settings .card,
-  body.viewonly [onclick^="editQuote"], body.viewonly [onclick^="deleteQuote"], body.viewonly [onclick^="lbEdit"], body.viewonly [onclick^="lbDel"],
+  body.viewonly [onclick^="editQuote"], body.viewonly [onclick^="deleteQuote"], body.viewonly [onclick^="pickEdit"], body.viewonly [onclick^="pickDel"], body.viewonly [onclick^="hideQuote"], body.viewonly [onclick^="showQuote"], body.viewonly [onclick^="lbEdit"], body.viewonly [onclick^="lbDel"],
   body.viewonly [onclick^="editLabourEntry"], body.viewonly [onclick^="deleteLabourEntry"], body.viewonly [onclick^="deleteLabourFromDetail"]{display:none !important;}
   .quote-item.fin{border-left:4px solid var(--teal);}
   .fin-tag{display:inline-block;background:var(--teal);color:#fff;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:700;margin-left:6px;}
@@ -180,7 +180,7 @@
   .ls-custom-item:last-child{border-bottom:none;}
   .ls-custom-item .name{font-weight:700;font-size:.88rem;}
 
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;font-size:.85rem;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;font-size:.85rem;z-index:120;opacity:0;transition:opacity .25s;pointer-events:none;}
   .toast.show{opacity:1;}
   .mbx{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px;}
   .mbx-card{background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px;text-align:center;}
@@ -191,6 +191,35 @@
   .footer-actions .btn{flex:1;min-width:120px;}
 
   hr.soft{border:none;border-top:1px solid var(--line);margin:14px 0;}
+
+  /* top-right View/PDF row on preview screens */
+  .pv-top{display:flex;justify-content:flex-end;margin-bottom:10px;}
+  /* option tag + old versions (saved list) */
+  .opt-tag{display:inline-block;background:var(--ochre);color:var(--teal-dark);border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:700;margin-left:6px;}
+  .quote-group{padding:10px 0 4px;border-bottom:1px solid var(--line);}
+  .quote-group.fin{border-left:4px solid var(--teal);padding-left:8px;}
+  .quote-group .gname{font-weight:700;margin-bottom:2px;}
+  .quote-group .quote-item{border-top:1px dashed var(--line);border-bottom:none;padding:8px 4px;}
+  .pick-card{max-width:460px;text-align:left;max-height:85vh;overflow:auto;}
+  .pick-card h3{margin:0 0 10px;font-size:1rem;}
+  .pick-line{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line);}
+  .pick-line.hid{opacity:.6;background:#faf9f5;}
+  .pick-line .pick-info{font-size:.8rem;color:#6b6558;flex:1;min-width:150px;}
+  .pick-line .actions{display:flex;gap:4px;flex:none;flex-wrap:wrap;}
+  .pick-line .actions .btn{padding:6px 8px;font-size:.72rem;}
+  .pick-sub{font-size:.72rem;font-weight:700;color:#8a8371;margin:12px 0 0;}
+  .cnt{font-weight:700;color:var(--teal);margin-left:4px;}
+  .old-link{display:inline-block;margin-top:6px;margin-left:10px;font-size:.78rem;font-weight:700;color:var(--teal);cursor:pointer;text-decoration:underline;}
+  .old-wrap{margin:0 0 6px 14px;padding-left:10px;border-left:3px dashed var(--line);background:#faf9f5;}
+  .old-wrap .quote-item{padding:8px 4px;}
+  /* shared PDF viewer (View/PDF) */
+  #pdfViewer{position:fixed;inset:0;z-index:80;background:#e9e7e0;display:flex;flex-direction:column;}
+  #pdfViewer .pv-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));background:var(--teal);color:#fff;}
+  #pdfViewer .pv-bar .pv-title{font-size:.8rem;font-weight:700;opacity:.9;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #pdfViewer .pv-body{flex:1;overflow:auto;padding:10px 8px 24px;-webkit-overflow-scrolling:touch;text-align:center;}
+  #pdfViewer .pv-body canvas{display:block;margin:0 auto 10px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);max-width:100%;}
+  #pdfViewer .pv-body iframe{width:100%;height:100%;border:0;background:#fff;}
+  #pdfViewer .pv-msg{padding:30px 16px;font-size:.9rem;color:#555;}
 </style>
 </head>
 <body>
@@ -347,8 +376,9 @@
       <div class="amt" id="grandAmount">₹0</div>
     </div>
 
-    <button class="btn btn-teal btn-block" id="finishBtn" onclick="finishQuotation()">✓ Finish &amp; Preview Quotation</button>
-    <button class="btn btn-outline btn-block" id="cancelEditBtn" style="display:none;margin-top:8px;" onclick="cancelEdit()">✕ Cancel edit</button>
+    <button class="btn btn-teal btn-block" id="finishBtn" onclick="finishQuotation()">✓ Save &amp; Preview</button>
+    <button class="btn btn-outline btn-block" id="saveNewBtn" style="display:none;margin-top:8px;" onclick="finishQuotation(true)">＋ Save as New &amp; Preview</button>
+    <button class="btn btn-outline btn-block" id="cancelEditBtn" style="margin-top:8px;" onclick="cancelEdit()">✕ Cancel</button>
   </div>
 
   <!-- ===================== SAVED QUOTATIONS VIEW ===================== -->
@@ -412,21 +442,23 @@
 
     <div class="footer-actions no-print" style="margin-bottom:10px;flex-direction:column;gap:8px;">
       <button class="btn btn-ochre btn-block" onclick="copyCustomerStatement()">📋 Copy Customer Copy to WhatsApp</button>
-      <button class="btn btn-outline btn-block" onclick="acctPdf('cust')">📄 Customer Copy PDF</button>
-      <button class="btn btn-outline btn-block" onclick="acctPdf('full')">📄 Full Account PDF (only for me)</button>
+      <button class="btn btn-outline btn-block" onclick="acctPdf('cust')">📄 View/PDF — Customer Copy</button>
+      <button class="btn btn-outline btn-block" onclick="acctPdf('full')">📄 View/PDF — Full Account (only for me)</button>
     </div>
-    <button class="btn btn-ghost btn-block no-print" onclick="switchTab('saved')">← Back to Saved Quotations</button>
+    <button class="btn btn-outline btn-block no-print" onclick="switchTab('saved')">✕ Close</button>
   </div>
 
   <!-- ===================== LABOUR DETAIL / PDF VIEW ===================== -->
   <div class="view" id="view-labour-detail">
+    <div class="pv-top no-print">
+      <button class="btn btn-teal btn-sm" onclick="labourPreviewPdf()">📄 View/PDF</button>
+    </div>
     <div class="doc" id="labourDocPreview"></div>
     <div class="footer-actions no-print">
       <button class="btn btn-outline" onclick="editLabourFromDetail()">✎ Edit</button>
       <button class="btn btn-danger" onclick="deleteLabourFromDetail()">🗑 Delete</button>
-      <button class="btn btn-teal" onclick="labourPreviewPdf()">📄 Preview PDF</button>
     </div>
-    <button class="btn btn-ghost btn-block no-print" onclick="showOnly('view-labour')">← Back to Labour List</button>
+    <button class="btn btn-outline btn-block no-print" onclick="showOnly('view-labour')">✕ Close</button>
   </div>
 
   <!-- ===================== SETTINGS / PROFILE VIEW ===================== -->
@@ -436,6 +468,16 @@
       <div class="field"><label>Name</label><div id="profName" style="padding:8px 0;font-weight:700;"></div></div>
       <div class="field"><label>Company</label><div id="profCompany" style="padding:8px 0;font-weight:700;"></div></div>
       <div class="field"><label>Cell Number</label><div id="profCell" style="padding:8px 0;font-weight:700;"></div></div>
+      <button class="btn btn-outline btn-block" id="profEditBtn" onclick="editProfileOpen()">✎ Edit Profile</button>
+      <div id="profEditBox" style="display:none;">
+        <div class="field"><label>Your Name</label><input type="text" id="profEditName"></div>
+        <div class="field"><label>Company Name</label><input type="text" id="profEditCompany"></div>
+        <div class="field"><label>Cell Number</label><input type="tel" id="profEditCell"></div>
+        <div class="footer-actions">
+          <button class="btn btn-teal" onclick="editProfileSave()">✓ Save</button>
+          <button class="btn btn-outline" onclick="editProfileCancel()">✕ Cancel</button>
+        </div>
+      </div>
       <hr class="soft">
       <p style="font-size:.85rem;color:#6b6558;">Resetting will clear this profile and show the setup screen again next time. Your saved quotations are not affected.</p>
       <button class="btn btn-danger btn-block" onclick="resetProfile()">Reset Profile</button>
@@ -473,6 +515,7 @@
       <p style="font-size:.85rem;color:#6b6558;">Permanently removes your profile and every saved quotation from this device. This cannot be undone — export a backup first if unsure.</p>
       <button class="btn btn-danger btn-block" onclick="deleteAllData()">🗑 Delete All Data</button>
     </div>
+    <button class="btn btn-outline btn-block" style="margin-top:4px;" onclick="switchTab('saved')">✕ Close</button>
   </div>
 
   <!-- ===================== PREVIEW / EXPORT VIEW ===================== -->
@@ -480,10 +523,10 @@
     <div class="doc" id="docPreview"></div>
 
     <div class="footer-actions no-print">
-      <button class="btn btn-teal" onclick="previewPdf()">📄 Preview PDF</button>
-      <button class="btn btn-ochre" onclick="copyWhatsappText()">📋 Copy to WhatsApp</button>
+      <button class="btn btn-teal" onclick="previewPdf()">📄 View/PDF</button>
+      <button class="btn btn-ochre" onclick="copyWhatsappText()">📋 WhatsApp</button>
     </div>
-    <button class="btn btn-ghost btn-block no-print" onclick="switchTab('new')">← Back to editing</button>
+    <button class="btn btn-outline btn-block no-print" style="margin-top:10px;" onclick="closePreview()">✕ Close</button>
   </div>
 
 </div>
@@ -517,6 +560,7 @@ let rowSeq = 1;
 let editingQuoteId = null;
 let VIEW_ONLY = false;   // true while an old year is opened for viewing
 let currentPreviewQuote = null;
+let previewFromSave = false;   // true when the preview was opened by Update / Save as New (Close then clears the edit form)
 
 const defaultWorkDetails = [
   'Cleaning the wall surface',
@@ -624,6 +668,33 @@ function renderProfileView(){
   document.getElementById('profName').textContent = profile.name;
   document.getElementById('profCompany').textContent = profile.company;
   document.getElementById('profCell').textContent = profile.cell;
+  editProfileCancel();
+}
+
+/* ---------------- Edit Profile (module) ---------------- */
+function editProfileOpen(){
+  if(!profile || VIEW_ONLY) return;
+  document.getElementById('profEditName').value = profile.name;
+  document.getElementById('profEditCompany').value = profile.company;
+  document.getElementById('profEditCell').value = profile.cell;
+  document.getElementById('profEditBox').style.display = 'block';
+  document.getElementById('profEditBtn').style.display = 'none';
+}
+function editProfileCancel(){
+  document.getElementById('profEditBox').style.display = 'none';
+  document.getElementById('profEditBtn').style.display = 'block';
+}
+function editProfileSave(){
+  if(VIEW_ONLY) return;
+  const name = document.getElementById('profEditName').value.trim();
+  const company = document.getElementById('profEditCompany').value.trim();
+  const cell = document.getElementById('profEditCell').value.trim();
+  if(!name || !company || !cell){ toast('Please fill all three fields'); return; }
+  profile = {name, company, cell};
+  saveProfileData(profile);
+  renderProfileView();
+  editProfileCancel();
+  toast('Profile updated!');
 }
 
 function resetProfile(){
@@ -901,7 +972,7 @@ function renderHeadings(keepFocus){
 }
 
 /* ---------------- Finish / Preview ---------------- */
-function finishQuotation(){
+function finishQuotation(asNew){
   const custName = document.getElementById('custName').value.trim();
   const custAddress = document.getElementById('custAddress').value.trim();
   const custContact = document.getElementById('custContact').value.trim();
@@ -952,22 +1023,40 @@ function finishQuotation(){
     netAmount
   };
 
-  if(editingQuoteId){
-    const prevQ = quotes.find(q=>q.id===editingQuoteId);
+  const baseQ = editingQuoteId ? quotes.find(q=>q.id===editingQuoteId) : null;
+  let savedMsg = 'Quotation saved!';
+  if(asNew && baseQ){
+    /* Save as New: original stays untouched, new quotation joins the same option group */
+    quoteObj.id = Math.max(Date.now(), ...quotes.map(q=>q.id+1));
+    if(groupHasFinalized(baseQ)){
+      /* customer already accepted one option: this becomes its own separate quotation (not hidden) */
+      savedMsg = 'Saved as a new separate quotation';
+    } else {
+      if(!baseQ.groupId){ baseQ.groupId = baseQ.id; baseQ.optNo = 1; }
+      quoteObj.groupId = baseQ.groupId;
+      quoteObj.optNo = nextOptNo(baseQ.groupId);
+      savedMsg = 'Saved as Option '+quoteObj.optNo;
+    }
+    quotes.push(quoteObj);
+  } else if(editingQuoteId){
+    const prevQ = baseQ;
     if(prevQ && prevQ.finalizedAt) quoteObj.finalizedAt = prevQ.finalizedAt;
+    if(prevQ && prevQ.groupId){ quoteObj.groupId = prevQ.groupId; quoteObj.optNo = prevQ.optNo; }
     quotes = quotes.map(q=>q.id===editingQuoteId ? quoteObj : q);
+    savedMsg = 'Quotation updated!';
   } else {
     quotes.push(quoteObj);
   }
   saveQuotes(quotes);
-  editingQuoteId = quoteObj.id;   // stay on this record: Back to editing + Finish again updates it, no duplicate
+  editingQuoteId = quoteObj.id;   // stay on this record until Close (then the form is cleared)
   refreshSaveButtons();
 
   currentPreviewQuote = quoteObj;
+  previewFromSave = true;
   renderPreview(quoteObj);
   showOnly('view-preview');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  toast('Quotation saved!');
+  toast(savedMsg);
 }
 
 /* on-screen preview: includes everything, for the contractor's own reference */
@@ -1126,10 +1215,7 @@ function previewPdf(){
   doc.text(profile.company, marginX, y); y += 14;
   doc.text(profile.cell, marginX, y);
 
-  const blob = doc.output('blob');
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  toast('PDF ready — opened in a new tab');
+  showViewerBar(doc, 'Quotation_'+quoteRef(q)+'_'+qd(q)+'.pdf');
 }
 
 /* ---------------- WhatsApp text (no header/footer, no site area) ---------------- */
@@ -1185,32 +1271,230 @@ function copyWhatsappText(){
   });
 }
 
+/* ---------------- Options / old versions (module) ----------------
+   Quotations made with "Save as New" share a groupId (= id of the first one) and an optNo.
+   When one option of a group is finalized, the others are hidden (derived, nothing is stored or deleted)
+   and show under "Old versions" of the finalized row. Un-finalize / delete it and they come back. */
+let pickKey = null, pickMode = '';
+function groupMembers(q){ return q && q.groupId ? quotes.filter(x=>x.groupId===q.groupId) : (q?[q]:[]); }
+function groupSize(q){ return groupMembers(q).length; }
+function groupHasFinalized(q){ return groupMembers(q).some(x=>x.finalizedAt); }
+function nextOptNo(groupId){ return Math.max(0, ...quotes.filter(x=>x.groupId===groupId).map(x=>x.optNo||1)) + 1; }
+/* one saved-list row per customer unit: a single quotation, or all options made with Save as New.
+   shown = finalized option(s) if any, otherwise the options not hidden by hand; the rest are hidden. */
+function savedUnits(){
+  const map = new Map(), out = [];
+  quotes.forEach(q=>{
+    const k = q.groupId ? 'g'+q.groupId : 'q'+q.id;
+    if(!map.has(k)){ const u = {key:k, all:[]}; map.set(k,u); out.push(u); }
+    map.get(k).all.push(q);
+  });
+  out.forEach(u=>{
+    u.all.sort((a,b)=>(a.optNo||1)-(b.optNo||1));
+    const fins = u.all.filter(x=>x.finalizedAt);
+    u.finAt = fins.length ? Math.min(...fins.map(x=>x.finalizedAt)) : 0;
+    u.shown = fins.length ? fins : u.all.filter(x=>!x.hidden);
+    if(!u.shown.length) u.shown = [u.all[0]];
+    u.hid = u.all.filter(x=>!u.shown.includes(x));
+    u.multi = u.all.length>1;
+    u.last = Math.max(...u.all.map(x=>x.id));
+  });
+  return out;
+}
+function hideQuote(id){
+  const q = quotes.find(x=>x.id===id); if(!q) return;
+  const u = savedUnits().find(x=>x.all.includes(q));
+  if(u && u.shown.length<=1){ toast('Keep at least one option visible'); return; }
+  q.hidden = true; saveQuotes(quotes); renderSavedList(); toast('Option hidden');
+}
+function showQuote(id){
+  const q = quotes.find(x=>x.id===id); if(!q) return;
+  delete q.hidden; saveQuotes(quotes); renderSavedList(); toast('Option shown');
+}
+
+/* ---------------- Option chooser (module) ----------------
+   A customer with more than one quotation has one row in Saved (name + count).
+   View / Edit / Del on that row open this box to choose which option. */
+function pickView(key){ pickOpen(key,'view'); }
+function pickEdit(key){ pickOpen(key,'edit'); }
+function pickDel(key){ pickOpen(key,'del'); }
+function pickOpen(key, mode){
+  pickKey = key; pickMode = mode;
+  let o = document.getElementById('pickBox');
+  if(!o){
+    o = document.createElement('div'); o.id = 'pickBox'; o.className = 'mbx';
+    o.innerHTML = '<div class="mbx-card pick-card"></div>';
+    o.addEventListener('click', e=>{ if(e.target===o) closePicker(); });
+    document.body.appendChild(o);
+  }
+  pickRefresh();
+}
+function closePicker(){ const o = document.getElementById('pickBox'); if(o) o.remove(); pickKey = null; }
+function pickRefresh(){
+  const o = document.getElementById('pickBox'); if(!o) return;
+  const u = savedUnits().find(x=>x.key===pickKey);
+  if(!u || !u.multi){ closePicker(); return; }
+  o.firstElementChild.innerHTML = pickHtml(u);
+}
+function pickHtml(u){
+  const verb = pickMode==='edit' ? 'to edit' : pickMode==='del' ? 'to delete' : 'to view';
+  const brand = q => (q.paintBrand && q.paintBrand.company) ? ' · '+escH(q.paintBrand.company) : '';
+  const info = q => `<b style="color:var(--ink);">Option ${q.optNo||1}</b> · ${qd(q)} · <span class="chip">₹${q.netAmount.toFixed(2)}</span>${brand(q)}`;
+  const main = q => pickMode==='edit' ? `<button class="btn btn-teal btn-sm" onclick="closePicker();editQuote(${q.id})">Edit</button>`
+                  : pickMode==='view' ? `<button class="btn btn-teal btn-sm" onclick="closePicker();viewQuote(${q.id})">View</button>` : '';
+  const del = q => `<button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id})">Del</button>`;
+  const shownLine = q => `
+    <div class="pick-line">
+      <div class="pick-info">${info(q)}
+        <div><label class="fin-row"><input type="checkbox" ${q.finalizedAt?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label></div>
+      </div>
+      <div class="actions">
+        ${main(q)}
+        ${(!q.finalizedAt && u.shown.length>1 && pickMode!=='del') ? `<button class="btn btn-outline btn-sm" onclick="hideQuote(${q.id})">Hide</button>` : ''}
+        ${del(q)}
+      </div>
+    </div>`;
+  const hidLine = q => `
+    <div class="pick-line hid">
+      <div class="pick-info">${info(q)}</div>
+      <div class="actions">
+        ${main(q)}
+        ${(q.hidden && !u.finAt) ? `<button class="btn btn-outline btn-sm" onclick="showQuote(${q.id})">Show</button>` : ''}
+        ${del(q)}
+      </div>
+    </div>`;
+  return `<h3>${escH(u.all[0].custName)} — choose quotation ${verb}</h3>` +
+    u.shown.map(shownLine).join('') +
+    (u.hid.length ? `<div class="pick-sub">Hidden (${u.hid.length})</div>` + u.hid.map(hidLine).join('') : '') +
+    `<button class="btn btn-ghost btn-block" style="margin-top:12px;" onclick="closePicker()">✕ Close</button>`;
+}
+
+/* ---------------- Shared PDF viewer (module) — View/PDF: top bar with Download PDF + Close ----------------
+   Every PDF in the app goes through showViewerBar(jsPDFdoc, fileName). */
+let _pv = null;
+function pdfSafe(s){ return String(s==null?'':s).replace(/[\\\/:*?"<>|#%&{}$!'@+`=]+/g,'').trim().replace(/\s+/g,'-').slice(0,40) || 'Customer'; }
+function quoteRef(q){                      // customer name (+ option and paint company when the quotation has options)
+  let r = pdfSafe(q && q.custName);
+  if(q && groupSize(q)>1){
+    r += '_Opt'+(q.optNo||1);
+    const c = q.paintBrand && q.paintBrand.company ? pdfSafe(q.paintBrand.company) : '';
+    if(c && c!=='Customer') r += '_'+c;
+  }
+  return r;
+}
+function downloadBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function loadPdfJs(){
+  return new Promise((res, rej)=>{
+    if(window.pdfjsLib){ res(window.pdfjsLib); return; }
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    sc.onload = ()=>{ try{ window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(window.pdfjsLib); }catch(e){ rej(e); } };
+    sc.onerror = ()=>rej(new Error('pdf.js not loaded'));
+    document.head.appendChild(sc);
+  });
+}
+async function pvRender(blob, body){
+  try{
+    const lib = await loadPdfJs();
+    const pdf = await lib.getDocument({data: new Uint8Array(await blob.arrayBuffer())}).promise;
+    body.innerHTML = '';
+    const cssW = Math.min(body.clientWidth - 16, 820), dpr = window.devicePixelRatio || 1;
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const base = page.getViewport({scale:1}), k = cssW / base.width;
+      const vp = page.getViewport({scale: k*dpr});
+      const cv = document.createElement('canvas');
+      cv.width = vp.width; cv.height = vp.height; cv.style.width = cssW+'px'; cv.style.height = (vp.height/dpr)+'px';
+      body.appendChild(cv);
+      await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
+    }
+  }catch(e){
+    /* fallback: let the browser show the PDF itself; Download PDF always works */
+    body.innerHTML = '<iframe src="'+_pv.url+'"></iframe>';
+  }
+}
+function showViewerBar(doc, fileName){
+  if(_pv) closeViewer();
+  const blob = doc.output('blob');
+  _pv = {blob, name: fileName, url: URL.createObjectURL(blob)};
+  const o = document.createElement('div');
+  o.id = 'pdfViewer';
+  o.innerHTML = '<div class="pv-bar"><button class="btn btn-ochre btn-sm" onclick="downloadViewerPdf()">⬇ Download PDF</button>' +
+    '<div class="pv-title">'+escH(fileName)+'</div>' +
+    '<button class="btn btn-outline btn-sm" style="background:#fff;" onclick="closeViewer()">✕ Close</button></div>' +
+    '<div class="pv-body" id="pvBody"><div class="pv-msg">Preparing PDF…</div></div>';
+  document.body.appendChild(o);
+  document.body.style.overflow = 'hidden';
+  pvRender(blob, document.getElementById('pvBody'));
+}
+function downloadViewerPdf(){
+  if(!_pv) return;
+  downloadBlob(_pv.blob, _pv.name);
+  toast('PDF downloaded');
+}
+function closeViewer(){
+  const o = document.getElementById('pdfViewer'); if(o) o.remove();
+  if(_pv){ URL.revokeObjectURL(_pv.url); _pv = null; }
+  document.body.style.overflow = '';
+}
+
 /* ---------------- Saved list ---------------- */
 function renderSavedList(){
   const el = document.getElementById('savedList');
   if(quotes.length===0){
     el.innerHTML = `<div class="empty"><div class="big">🗒️</div>No saved quotations yet.<br>Create one from the "New Quote" tab.</div>`;
+    if(pickKey) closePicker();
     return;
   }
   migrateFinalized();
-  const fin = quotes.filter(q=>q.finalizedAt).sort((a,b)=>a.finalizedAt-b.finalizedAt);
-  const drafts = quotes.filter(q=>!q.finalizedAt).reverse();
+  const units = savedUnits();
+  const fin = units.filter(u=>u.finAt).sort((a,b)=>a.finAt-b.finAt);
+  const drafts = units.filter(u=>!u.finAt).sort((a,b)=>b.last-a.last);
   const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const card = (q, n) => `
+  const brand = q => (q.paintBrand && q.paintBrand.company) ? ' · '+esc(q.paintBrand.company) : '';
+  const labBtn = q => q && q.finalizedAt ? `<button class="btn btn-ochre btn-sm" onclick="openLabourForQuote(${q.id})">Labour</button>` : '';
+  /* single quotation: View / Edit / Del work directly */
+  const single = (u, n) => { const q = u.all[0]; return `
     <div class="quote-item ${n?'fin':''}">
       <div>
         <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
         <div class="meta">${qd(q)} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
-        <label class="fin-row"><input type="checkbox" ${n?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
+        <label class="fin-row"><input type="checkbox" ${q.finalizedAt?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
       </div>
       <div class="actions">
         <button class="btn btn-outline btn-sm" onclick="viewQuote(${q.id})">View</button>
         <button class="btn btn-outline btn-sm" onclick="editQuote(${q.id})">Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id})">Del</button>
-        ${n?`<button class="btn btn-ochre btn-sm" onclick="openLabourForQuote(${q.id})">Labour</button>`:''}
+        ${labBtn(q)}
       </div>
-    </div>`;
-  el.innerHTML = '<h3>Saved Quotations</h3>' + fin.map((q,i)=>card(q,i+1)).join('') + drafts.map(q=>card(q,0)).join('');
+    </div>`; };
+  /* customer with more than one quotation: one row, name (count); the option is chosen in the box */
+  const multi = (u, n) => {
+    const f = u.finAt ? u.shown[0] : null;
+    const latest = u.all.find(x=>x.id===u.last);
+    const meta = f ? `Option ${f.optNo||1} · ${qd(f)} · <span class="chip">₹${f.netAmount.toFixed(2)}</span>${brand(f)}`
+                   : `${u.all.length} quotations · latest ${qd(latest)}`;
+    return `
+    <div class="quote-item ${n?'fin':''}">
+      <div>
+        <div class="who">${esc(u.all[0].custName)}<span class="cnt">(${u.all.length})</span>${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
+        <div class="meta">${meta}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" onclick="pickView('${u.key}')">View</button>
+        <button class="btn btn-outline btn-sm" onclick="pickEdit('${u.key}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="pickDel('${u.key}')">Del</button>
+        ${labBtn(f)}
+      </div>
+    </div>`; };
+  const unitHtml = (u, n) => u.multi ? multi(u, n) : single(u, n);
+  el.innerHTML = '<h3>Saved Quotations</h3>' + fin.map((u,i)=>unitHtml(u,i+1)).join('') + drafts.map(u=>unitHtml(u,0)).join('');
+  if(pickKey) pickRefresh();
 }
 
 /* ---------------- Finalized mark (module) ---------------- */
@@ -1242,9 +1526,16 @@ function toggleFinalized(id, on){
 function viewQuote(id){
   const q = quotes.find(x=>x.id===id);
   currentPreviewQuote = q;
+  previewFromSave = false;
   renderPreview(q);
   showOnly('view-preview');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+}
+
+/* Close on the preview: back to the Saved list (after Update / Save as New the edit form is cleared) */
+function closePreview(){
+  if(previewFromSave){ previewFromSave = false; startFreshQuote(true, true); }
+  switchTab('saved');
 }
 
 function editQuote(id){
@@ -1348,7 +1639,7 @@ function importBackup(evt){
 }
 
 /* ---------------- Start fresh ---------------- */
-function startFreshQuote(skipConfirm){
+function startFreshQuote(skipConfirm, quiet){
   if(!skipConfirm && (headings.length>0 || document.getElementById('custName').value.trim())){
     if(!confirm('Clear the current form and start a new blank quotation?')) return;
   }
@@ -1369,21 +1660,31 @@ function startFreshQuote(skipConfirm){
   workDetails = defaultWorkDetails.map(label => ({label, checked:false}));
   renderWorkDetails();
   renderHeadings();
-  switchTab('new');
   refreshSaveButtons();
+  if(quiet) return;
+  switchTab('new');
   toast('Ready for a new quotation');
 }
 
 /* ---------------- Edit mode buttons: Update / Save as new / Cancel ---------------- */
 function refreshSaveButtons(){
   const ed = !!editingQuoteId;
-  document.getElementById('finishBtn').innerHTML = ed ? '✓ Update &amp; Preview' : '✓ Finish &amp; Preview Quotation';
-  document.getElementById('cancelEditBtn').style.display = ed ? 'block' : 'none';
+  document.getElementById('finishBtn').innerHTML = ed ? '✓ Update &amp; Preview' : '✓ Save &amp; Preview';
+  document.getElementById('cancelEditBtn').innerHTML = ed ? '✕ Cancel edit' : '✕ Cancel';
+  document.getElementById('cancelEditBtn').style.display = 'block';
+  document.getElementById('saveNewBtn').style.display = ed ? 'block' : 'none';
 }
 function cancelEdit(){
+  if(editingQuoteId){
+    startFreshQuote(true);
+    switchTab('saved');
+    toast('Edit closed — last saved version kept');
+    return;
+  }
+  /* new quotation: clear the form (asks only if something was typed) */
+  const typed = headings.length>0 || document.getElementById('custName').value.trim();
+  if(typed && !confirm('Cancel this quotation? What you typed will be cleared.')) return;
   startFreshQuote(true);
-  switchTab('saved');
-  toast('Edit closed — last saved version kept');
 }
 
 /* ---------------- Labour module ---------------- */
@@ -1584,10 +1885,7 @@ function labourPreviewPdf(){
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
   doc.text('Total Amount: Rs.'+e.total.toFixed(2), marginX, y);
 
-  const blob = doc.output('blob');
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  toast('PDF ready — opened in a new tab');
+  showViewerBar(doc, 'Labour_'+quoteRef(q||{custName:'Customer'})+'_'+formatDate(e.date)+'.pdf');
 }
 
 
@@ -1896,9 +2194,7 @@ function acctPdf(mode){
     table('Materials Used', ['Date','Bill No.','Amount','Type','Note'], [mx, mx+90, mx+180, mx+270, mx+330],
       d.mat.map(e=>[formatDate(e.date), e.bill||'-', 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
   }
-  const url = URL.createObjectURL(doc.output('blob'));
-  window.open(url, '_blank');
-  toast('PDF ready — opened in a new tab');
+  showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
 }
 
 /* ---------------- Lump Sum / Only Labour heading box (module) ---------------- */
@@ -2121,7 +2417,7 @@ async function viewOldYearDrive(){
     const f = await driveList("name contains '"+G_PREFIX+"' and '"+fid+"' in parents and trashed=false","&orderBy=modifiedTime desc&pageSize=15");
     if(!f.length) return msgBox('Nothing found','No painting-quotation files in your Drive "ASM Backups" folder.');
     const o = document.createElement('div'); o.className='mbx';
-    o.innerHTML = '<div class="mbx-card"><h3>Open old year</h3><div id="oyList"></div><button class="btn btn-ghost" id="oyClose">Cancel</button></div>';
+    o.innerHTML = '<div class="mbx-card"><h3>Open old year</h3><div id="oyList"></div><button class="btn btn-ghost" id="oyClose">✕ Close</button></div>';
     f.forEach(x=>{
       const b = document.createElement('button');
       b.className = 'btn btn-outline btn-block'; b.style.marginBottom = '6px'; b.textContent = x.name;
@@ -2142,11 +2438,14 @@ async function viewOldYearDrive(){
 /* ---------------- Help panel (module) — works offline ---------------- */
 const HELP_TOPICS = [
  {t:'Making a quotation', h:`<ul>
-  <li>First time: fill your company details once (Profile tab).</li>
+  <li>First time: fill your company details once (Profile tab). Use <b>Edit Profile</b> there to correct them later.</li>
   <li>New Quote: enter customer and site details, then add headings (Interior, Exterior, Ceiling, Lump Sum, Only Labour or your own name).</li>
   <li>Choose the paint brand and tick the work details.</li>
-  <li><b>Finish &amp; Preview</b> saves the quotation and shows the preview. From there you can make the PDF or copy the text for WhatsApp.</li>
-  <li>Press <b>Back to editing</b>, change something, then <b>Update &amp; Preview</b>: the same record is updated, no duplicate.</li>
+  <li><b>Save &amp; Preview</b> saves the quotation and shows the preview. Tap <b>View/PDF</b> to see the PDF, then <b>Download PDF</b> to save it, or copy the text for WhatsApp.</li>
+  <li>To change a saved quotation: Saved tab, <b>Edit</b>, then <b>Update &amp; Preview</b>: the same record is updated, no duplicate. In the preview, <b>View/PDF</b> shows the PDF, <b>WhatsApp</b> copies the text and <b>Close</b> returns to the Saved list.</li>
+  <li><b>Save as New &amp; Preview</b> (while editing) keeps the old quotation and saves your changes as a new <b>Option</b> for the same customer, for example another paint company or grade. Each option has its own PDF.</li>
+  <li>A customer with more than one quotation has one row with the count, for example <b>Ravi (2)</b>. Tap View, Edit or Del and choose the option in the box. <b>Hide</b> keeps an option safe under Hidden (Show, Del).</li>
+  <li>When the customer accepts one, tick <b>Finalized</b>: the other options hide automatically. Un-finalize to bring them back.</li>
   <li>Saved tab: View, Edit or Del each quotation.</li></ul>`},
  {t:'Headings and Lump Sum', h:`<ul>
   <li><b>Interior, Exterior, Ceiling and custom headings:</b> add measurement rows (length, height, nos), the deduction for doors and windows, and the rate per sqft.</li>
