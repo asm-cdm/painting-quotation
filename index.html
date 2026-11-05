@@ -163,6 +163,15 @@
   body.viewonly #view-settings .card,
   body.viewonly [onclick^="editQuote"], body.viewonly [onclick^="deleteQuote"], body.viewonly [onclick^="pickEdit"], body.viewonly [onclick^="pickDel"], body.viewonly [onclick^="hideQuote"], body.viewonly [onclick^="showQuote"], body.viewonly [onclick^="lbEdit"], body.viewonly [onclick^="lbDel"],
   body.viewonly [onclick^="editLabourEntry"], body.viewonly [onclick^="deleteLabourEntry"], body.viewonly [onclick^="deleteLabourFromDetail"]{display:none !important;}
+ .acc-line{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;font-weight:600;font-size:.95rem;}
+  .acc-line .acc-val{margin-left:auto;font-size:.85rem;font-weight:700;}
+  .acc-line .acc-val.red{color:#b3321f;} .acc-line .acc-val.green{color:#17674c;}
+  .acc-line .acc-arr{color:#6b6558;font-size:.9rem;}
+  .acc-line.open{border-color:var(--teal);background:var(--wall);margin-bottom:4px;}
+  .acc-body{display:none;margin-bottom:10px;} .acc-body.open{display:block;}
+  #accFocusHead{display:none;}
+  #view-labour.acc-focus #accFocusHead{display:block;}
+  #view-labour.acc-focus .acc-line, #view-labour.acc-focus #labTopCard, #view-labour.acc-focus #labBottomClose{display:none;}
   .tf{position:relative;}
   .tf-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1.5px solid var(--teal);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:190px;overflow-y:auto;margin-top:2px;}
   .tf-item{padding:10px 12px;font-size:.92rem;cursor:pointer;border-bottom:1px solid var(--line);}
@@ -396,7 +405,7 @@
 
   <!-- ===================== LABOUR VIEW (linked to a customer quotation) ===================== -->
   <div class="view" id="view-labour">
-    <div class="card" style="border-left:5px solid var(--teal);">
+    <div class="card" id="labTopCard" style="border-left:5px solid var(--teal);">
       <h3 style="margin-bottom:2px;">Labour for: <span id="labourCustName"></span></h3>
       <p style="font-size:.8rem;color:#6b6558;margin:0;">These labour entries are linked only to this customer's quotation.</p>
       <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;">
@@ -404,8 +413,16 @@
         <button class="btn btn-ochre btn-sm" onclick="openMatView()">📦 Add Materials<span class="cnt" id="mtBtnCnt"></span></button>
       </div>
     </div>
-    <div class="card" id="labSummary"></div>
+    <div class="card" id="accFocusHead" style="border-left:5px solid var(--teal);"><h3 id="accFocusTitle" style="margin:0;"></h3></div>
 
+    <div class="acc-line" id="accL-sum" onclick="accToggle('sum')"><span>📊 Account Summary</span><span class="acc-val" id="accV-sum"></span><span class="acc-arr" id="accA-sum">▸</span></div>
+    <div class="acc-body" id="accB-sum">
+    <div class="card" id="labSummary"></div>
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('sum')">✕ Close</button>
+    </div>
+
+    <div class="acc-line" id="accL-lab" onclick="accToggle('lab')"><span>👷 Labour Entry</span><span class="acc-val" id="accV-lab"></span><span class="acc-arr" id="accA-lab">▸</span></div>
+    <div class="acc-body" id="accB-lab">
     <div class="card" id="labourFormCard">
       <h3 id="labourFormTitle">Add Labour Entry</h3>
       <div class="row2">
@@ -449,15 +466,28 @@
       <div class="amt" id="labourGrandAmount">₹0</div>
     </div>
 
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('lab')">✕ Close</button>
+    </div>
+    <div class="acc-line" id="accL-rec" onclick="accToggle('rec')"><span>💰 Cash Received</span><span class="acc-val" id="accV-rec"></span><span class="acc-arr" id="accA-rec">▸</span></div>
+    <div class="acc-body" id="accB-rec">
     <div class="card" id="lbBox-rec"></div>
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('rec')">✕ Close</button>
+    </div>
+    <div class="acc-line" id="accL-mat" onclick="accToggle('mat')"><span>🧱 Materials Used</span><span class="acc-val" id="accV-mat"></span><span class="acc-arr" id="accA-mat">▸</span></div>
+    <div class="acc-body" id="accB-mat">
     <div class="card" id="lbBox-mat"></div>
-
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('mat')">✕ Close</button>
+    </div>
+    <div class="acc-line" id="accL-rep" onclick="accToggle('rep')"><span>📄 Reports (WhatsApp / PDF)</span><span class="acc-val" id="accV-rep"></span><span class="acc-arr" id="accA-rep">▸</span></div>
+    <div class="acc-body" id="accB-rep">
     <div class="footer-actions no-print" style="margin-bottom:10px;flex-direction:column;gap:8px;">
       <button class="btn btn-ochre btn-block" onclick="copyCustomerStatement()">📋 Copy Customer Copy to WhatsApp</button>
       <button class="btn btn-outline btn-block" onclick="acctPdf('cust')">📄 View/PDF — Customer Copy</button>
       <button class="btn btn-outline btn-block" onclick="acctPdf('full')">📄 View/PDF — Full Account (only for me)</button>
     </div>
-    <button class="btn btn-outline btn-block no-print" onclick="switchTab('saved')">✕ Close</button>
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('rep')">✕ Close</button>
+    </div>
+    <button class="btn btn-outline btn-block no-print" id="labBottomClose" onclick="switchTab('saved')">✕ Close</button>
   </div>
 
   <!-- ===================== LABOUR DETAIL / PDF VIEW ===================== -->
@@ -1849,6 +1879,7 @@ function openLabourForQuote(quoteId){
   renderLabourList();
   lbRender('rec'); lbRender('mat');
   clUpdateCount(); mtUpdateCount();
+  accCloseAll();
   showOnly('view-labour');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
 }
@@ -1965,6 +1996,8 @@ function editLabourFromDetail(){
   if(!currentLabourView) return;
   editLabourEntry(currentLabourView.id);
   showOnly('view-labour');
+  accOpen('lab');
+  document.getElementById('labourFormCard').scrollIntoView({behavior:'smooth'});
 }
 
 function deleteLabourFromDetail(){
@@ -2262,6 +2295,38 @@ function renderLabourSummary(){
     row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) + row('Materials paid', mc.paid) +
     (mc.disc>0 ? row('Materials discount', mc.disc) : '') + row('Materials unpaid', mc.unpaid) +
     row('Net (received − labour − materials paid)', net, 'big');
+  accRefresh(lab, bal, mc.unpaid);
+}
+
+/* ---------------- Labour screen accordion (module): one line each, one open at a time ---------------- */
+const ACC_KEYS = ['sum','lab','rec','mat','rep'];
+const ACC_TITLES = { sum:'📊 Account Summary', lab:'👷 Labour Entry', rec:'💰 Cash Received', mat:'🧱 Materials Used', rep:'📄 Reports' };
+function accSet(key, on){
+  document.getElementById('accB-'+key).classList.toggle('open', on);
+  document.getElementById('accL-'+key).classList.toggle('open', on);
+  document.getElementById('accA-'+key).textContent = on ? '▾' : '▸';
+}
+function accSync(){                      // an open module takes over the screen; none open = the list of lines
+  const open = ACC_KEYS.find(k=>document.getElementById('accB-'+k).classList.contains('open'));
+  document.getElementById('view-labour').classList.toggle('acc-focus', !!open);
+  if(open){
+    const q = quotes.find(x=>x.id===currentLabourQuoteId);
+    document.getElementById('accFocusTitle').textContent = ACC_TITLES[open] + (q ? ' — ' + q.custName : '');
+  }
+}
+function accCloseAll(){ ACC_KEYS.forEach(k=>accSet(k, false)); accSync(); }
+function accOpen(key){ accCloseAll(); accSet(key, true); accSync(); window.scrollTo(0,0); }
+function accToggle(key){
+  if(document.getElementById('accB-'+key).classList.contains('open')){ accCloseAll(); window.scrollTo(0,0); }
+  else accOpen(key);
+}
+function accRefresh(lab, bal, unpaid){
+  const m = n => '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:2});
+  const put = (k, text, cls) => { const el = document.getElementById('accV-'+k); if(el){ el.textContent = text; el.className = 'acc-val' + (cls ? ' '+cls : ''); } };
+  put('sum', 'Bal ' + m(bal), bal>0 ? 'red' : 'green');
+  put('lab', m(lab));
+  put('rec', 'Bal ' + m(bal), bal>0 ? 'red' : 'green');
+  put('mat', 'Unpaid ' + m(unpaid), unpaid>0 ? 'red' : 'green');
 }
 lbInit();
 
