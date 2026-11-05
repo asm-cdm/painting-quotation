@@ -2295,7 +2295,7 @@ function renderLabourSummary(){
     row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) + row('Materials paid', mc.paid) +
     (mc.disc>0 ? row('Materials discount', mc.disc) : '') + row('Materials unpaid', mc.unpaid) +
     row('Net (received − labour − materials paid)', net, 'big');
-  accRefresh(lab, bal, mc.unpaid);
+  accRefresh(lab, bal, mc.unpaid, rec);
 }
 
 /* ---------------- Labour screen accordion (module): one line each, one open at a time ---------------- */
@@ -2320,12 +2320,12 @@ function accToggle(key){
   if(document.getElementById('accB-'+key).classList.contains('open')){ accCloseAll(); window.scrollTo(0,0); }
   else accOpen(key);
 }
-function accRefresh(lab, bal, unpaid){
+function accRefresh(lab, bal, unpaid, rec){
   const m = n => '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:2});
   const put = (k, text, cls) => { const el = document.getElementById('accV-'+k); if(el){ el.textContent = text; el.className = 'acc-val' + (cls ? ' '+cls : ''); } };
   put('sum', 'Bal ' + m(bal), bal>0 ? 'red' : 'green');
   put('lab', m(lab));
-  put('rec', 'Bal ' + m(bal), bal>0 ? 'red' : 'green');
+  put('rec', m(rec));
   put('mat', 'Unpaid ' + m(unpaid), unpaid>0 ? 'red' : 'green');
 }
 lbInit();
