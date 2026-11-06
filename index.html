@@ -176,7 +176,7 @@
   .tf-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1.5px solid var(--teal);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:190px;overflow-y:auto;margin-top:2px;}
   .tf-item{padding:10px 12px;font-size:.92rem;cursor:pointer;border-bottom:1px solid var(--line);}
   .tf-item:last-child{border-bottom:none;} .tf-item:active,.tf-item:hover{background:var(--wall);}
-  body.viewonly #clFormCard, body.viewonly [onclick^="clEdit"], body.viewonly [onclick^="clDel"], body.viewonly #mtFormCard, body.viewonly [onclick^="mtEdit"], body.viewonly [onclick^="mtDel"], body.viewonly [onclick^="mtAddTo"], body.viewonly #mpFormCard, body.viewonly [onclick^="mpEdit"], body.viewonly [onclick^="mpDel"]{display:none !important;}
+  body.viewonly #clFormCard, body.viewonly [onclick^="clEdit"], body.viewonly [onclick^="clDel"], body.viewonly #mtFormCard, body.viewonly [onclick^="mtEdit"], body.viewonly [onclick^="mtDel"], body.viewonly [onclick^="mtAddTo"], body.viewonly #bvList [onclick^="lbEdit"], body.viewonly #bvList [onclick^="lbDel"], body.viewonly #mpFormCard, body.viewonly [onclick^="mpEdit"], body.viewonly [onclick^="mpDel"]{display:none !important;}
   .paid-tick{display:flex;align-items:center;gap:6px;font-size:.85rem;margin-top:26px;}
   .paid-tick input{width:18px;height:18px;margin:0;}
   .chip.unpaid{background:#f6d9d3;color:#8a2a1a;} .chip.paidc{background:#d8eee5;color:#17674c;}
@@ -572,6 +572,20 @@
     <button class="btn btn-outline btn-block no-print" onclick="mtCloseDetail()">✕ Close</button>
   </div>
 
+  <!-- ===================== MATERIAL BILLS LIST VIEW ===================== -->
+  <div class="view" id="view-matbills">
+    <div class="card" style="border-left:5px solid var(--ochre);"><h3 id="bvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="bvList"></div>
+    <button class="btn btn-outline btn-block no-print" onclick="closeBillsView()">✕ Close</button>
+  </div>
+
+  <!-- ===================== MATERIAL PAYMENTS LIST VIEW ===================== -->
+  <div class="view" id="view-matpaylist">
+    <div class="card" style="border-left:5px solid var(--ochre);"><h3 id="pvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="pvList"></div>
+    <button class="btn btn-outline btn-block no-print" onclick="closePayListView()">✕ Close</button>
+  </div>
+
   <!-- ===================== MATERIAL PAYMENT VIEW (payments against the total unpaid) ===================== -->
   <div class="view" id="view-matpay">
     <div class="card" style="border-left:5px solid var(--ochre);">
@@ -593,7 +607,7 @@
       <div class="sqft-badge" id="mpAfter" style="display:inline-block;margin-bottom:10px;">Balance after: -</div>
       <div class="footer-actions">
         <button class="btn btn-teal" onclick="mpSave()">💾 Save Payment</button>
-        <button class="btn btn-ghost" id="mp-cancel" style="display:none;" onclick="mpReset()">Cancel Edit</button>
+        <button class="btn btn-ghost" id="mp-cancel" style="display:none;" onclick="mpCancel()">Cancel Edit</button>
       </div>
     </div>
     <div class="card" id="mpList"></div>
@@ -2185,6 +2199,7 @@ const LB = {
   mat:{ key:'bs_materials', title:'Materials Used', amtLabel:'Amount', hasBill:true, data:lbLoad('bs_materials') }
 };
 const lbEditing = { rec:null, mat:null };
+let lbBillsMode = false, lbBillsReturn = false;
 const CL = { key:'bs_colours', data:lbLoad('bs_colours') };
 function clSaveAll(){ if(VIEW_ONLY) return; localStorage.setItem(CL.key, JSON.stringify(CL.data)); }
 const MT = { key:'bs_matlist', data:lbLoad('bs_matlist') };
@@ -2214,7 +2229,7 @@ function lbInit(){
       <div class="field"><label>Note</label><input type="text" id="${p}-note"></div>
       <div class="footer-actions">
         <button class="btn btn-teal" onclick="lbSave('${kind}')">💾 Save Entry</button>
-        <button class="btn btn-ghost" id="${p}-cancel" style="display:none;" onclick="lbReset('${kind}')">Cancel Edit</button>
+        <button class="btn btn-ghost" id="${p}-cancel" style="display:none;" onclick="lbCancel('${kind}')">Cancel Edit</button>
       </div>
       ${c.hasBill ? `<div style="margin-top:10px;"><button class="btn btn-ochre btn-sm" onclick="openPayView()">💳 Payment</button></div>` : ''}
       <div id="${p}-list" style="margin-top:12px;"></div>`;
@@ -2235,6 +2250,10 @@ function lbReset(kind){
   document.getElementById(p+'-title').textContent = LB[kind].title;
   document.getElementById(p+'-cancel').style.display = 'none';
 }
+function lbCancel(kind){
+  lbReset(kind);
+  if(kind==='mat' && lbBillsReturn){ lbBillsReturn = false; openBillsView(); }
+}
 function lbSave(kind, ok){
   const p = 'lb-'+kind, c = LB[kind];
   const date = dpCheck(p+'-date', ok ? true : ()=>lbSave(kind, true));
@@ -2254,10 +2273,12 @@ function lbSave(kind, ok){
   lbReset(kind);
   lbRender(kind);
   toast(c.title+' saved!');
+  if(kind==='mat' && lbBillsReturn){ lbBillsReturn = false; openBillsView(); }
 }
 function lbEdit(kind, id){
   const p = 'lb-'+kind, e = LB[kind].data.find(x=>x.id===id);
   if(!e) return;
+  if(kind==='mat' && lbBillsMode){ lbBillsMode = false; showOnly('view-labour'); accOpen('mat'); lbBillsReturn = true; }
   lbEditing[kind] = id;
   dpSet(p+'-date', e.date);
   document.getElementById(p+'-amount').value = e.amount;
@@ -2277,8 +2298,47 @@ function lbDelDo(kind, id){
   lbRender(kind);
   toast('Deleted');
 }
+function lbRenderMatLine(){               // Materials Used shows one summary line; tap it for the bills
+  const el = document.getElementById('lb-mat-list');
+  const list = lbScoped('mat'), mc = matCalc(currentLabourQuoteId);
+  el.innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No bills yet.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openBillsView()">
+       <div><div class="who">🧾 Bills (${list.length})</div><div class="meta">Unpaid balance ₹${mc.unpaid.toFixed(2)}</div></div>
+       <div style="font-weight:700;white-space:nowrap;">₹${mc.bills.toFixed(2)} ▸</div>
+     </div>`;
+  billsRender();
+}
+function openBillsView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  lbBillsMode = true;
+  document.getElementById('bvTitle').textContent = '🧾 Bills — ' + q.custName;
+  billsRender();
+  showOnly('view-matbills');
+  window.scrollTo(0,0);
+}
+function closeBillsView(){
+  lbBillsMode = false;
+  showOnly('view-labour');
+}
+function billsRender(){
+  const el = document.getElementById('bvList'); if(!el) return;
+  const list = lbScoped('mat').sort((a,b)=> new Date(b.date) - new Date(a.date)), mc = matCalc(currentLabourQuoteId);
+  el.innerHTML = '<h3>Bills <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No bills yet.</div>' : list.map(e=>`
+      <div class="quote-item">
+        <div>
+          <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.amount.toFixed(2)}</span></div>
+          <div class="meta">${e.paid!==false ? '<span class="chip paidc">Paid</span> '+escH(e.type||'') : '<span class="chip unpaid">Unpaid</span>'}${e.bill?' · Bill '+escH(e.bill):''}${e.note?' · '+escH(e.note):''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="lbEdit('mat',${e.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="lbDel('mat',${e.id})">Del</button>
+        </div>
+      </div>`).join('')) +
+    `<div class="sum-row big"><span>Total Bills</span><span>₹${mc.bills.toFixed(2)}</span></div><div class="sum-row"><span>Unpaid balance</span><span>₹${mc.unpaid.toFixed(2)}</span></div>`;
+}
 function lbScoped(kind){ return LB[kind].data.filter(e=>e.quoteId===currentLabourQuoteId); }
 function lbRender(kind){
+  if(kind==='mat'){ lbRenderMatLine(); renderLabourSummary(); return; }
   const el = document.getElementById('lb-'+kind+'-list');
   const list = lbScoped(kind).sort((a,b)=> new Date(b.date) - new Date(a.date));
   const total = list.reduce((s,e)=>s+e.amount,0);
@@ -2328,7 +2388,7 @@ function accSync(){                      // an open module takes over the screen
     document.getElementById('accFocusTitle').textContent = ACC_TITLES[open] + (q ? ' — ' + q.custName : '');
   }
 }
-function accCloseAll(){ ACC_KEYS.forEach(k=>accSet(k, false)); accSync(); }
+function accCloseAll(){ ACC_KEYS.forEach(k=>accSet(k, false)); lbBillsReturn = false; accSync(); }
 function accOpen(key){ accCloseAll(); accSet(key, true); accSync(); window.scrollTo(0,0); }
 function accToggle(key){
   if(document.getElementById('accB-'+key).classList.contains('open')){ accCloseAll(); window.scrollTo(0,0); }
@@ -2723,7 +2783,7 @@ function mtPdf(){
 
 
 /* ---------------- Material Payment module (payments against total unpaid; balance carried forward; discount closes it) ---------------- */
-let mpEditingId = null;
+let mpEditingId = null, mpListMode = false, mpReturn = false;
 const r2 = n => Math.round(n*100)/100;
 function matCalc(qid){                     // bills with no 'paid' flag (older entries) count as paid
   const bills = LB.mat.data.filter(e=>e.quoteId===qid), pays = MP.data.filter(e=>e.quoteId===qid);
@@ -2766,12 +2826,14 @@ function openPayView(){
   document.getElementById('mpCustName').textContent = q.custName + ' — ' + qd(q);
   const slot = document.getElementById('mp-date-slot');
   if(slot){ slot.outerHTML = dpHtml('mp-date'); }
+  mpListMode = false; mpReturn = false;
   mpReset();
   mpRender();
   showOnly('view-matpay');
   window.scrollTo(0,0);
 }
 function closePayView(){
+  mpListMode = false; mpReturn = false;
   mpReset();
   lbRender('mat');
   showOnly('view-labour');
@@ -2803,12 +2865,20 @@ function mpSave(ok){
   if(mpEditingId) MP.data = MP.data.map(e=>e.id===mpEditingId ? entry : e);
   else MP.data.push(entry);
   mpSaveAll();
+  const back = mpReturn; mpReturn = false;
   mpReset();
   mpRender();
   toast('Payment saved!');
+  if(back) openPayListView();
+}
+function mpCancel(){
+  const back = mpReturn; mpReturn = false;
+  mpReset();
+  if(back) openPayListView();
 }
 function mpEdit(id){
   const e = MP.data.find(x=>x.id===id); if(!e) return;
+  if(mpListMode){ mpListMode = false; mpReturn = true; showOnly('view-matpay'); window.scrollTo(0,0); }
   mpEditingId = id;
   dpSet('mp-date', e.date);
   document.getElementById('mp-mode').value = e.mode || 'Cash';
@@ -2832,10 +2902,34 @@ function mpDelDo(id){
   mpRender();
   toast('Deleted');
 }
-function mpRender(){
-  const list = mpTimeline(currentLabourQuoteId);
-  document.getElementById('mpList').innerHTML = '<h3>Payments <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No payments yet.</div>' :
-    list.map(e=>`
+function mpRender(){                      // Payment screen shows one summary line; tap it for the payments
+  const list = mpTimeline(currentLabourQuoteId), mc = matCalc(currentLabourQuoteId);
+  document.getElementById('mpList').innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No payments yet.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openPayListView()">
+       <div><div class="who">💰 Payments (${list.length})</div><div class="meta">Balance ₹${mc.unpaid.toFixed(2)}</div></div>
+       <div style="font-weight:700;white-space:nowrap;">₹${mc.payPaid.toFixed(2)} ▸</div>
+     </div>`;
+  mpListRender();
+  mpRenderSummary();
+  mpLive();
+  renderLabourSummary();
+}
+function openPayListView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  mpListMode = true;
+  document.getElementById('pvTitle').textContent = '💰 Payments — ' + q.custName;
+  mpListRender();
+  showOnly('view-matpaylist');
+  window.scrollTo(0,0);
+}
+function closePayListView(){
+  mpListMode = false;
+  showOnly('view-matpay');
+}
+function mpListRender(){
+  const el = document.getElementById('pvList'); if(!el) return;
+  const list = mpTimeline(currentLabourQuoteId), mc = matCalc(currentLabourQuoteId);
+  el.innerHTML = '<h3>Payments <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No payments yet.</div>' : list.map(e=>`
       <div class="quote-item">
         <div>
           <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.paid.toFixed(2)}</span>${e.discount>0 ? ' · Discount ₹'+e.discount.toFixed(2) : ''}</div>
@@ -2845,10 +2939,8 @@ function mpRender(){
           <button class="btn btn-outline btn-sm" onclick="mpEdit(${e.id})">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="mpDel(${e.id})">Del</button>
         </div>
-      </div>`).join(''));
-  mpRenderSummary();
-  mpLive();
-  renderLabourSummary();
+      </div>`).join('')) +
+    `<div class="sum-row big"><span>Payments total</span><span>₹${mc.payPaid.toFixed(2)}</span></div>` + (mc.disc>0 ? `<div class="sum-row"><span>Discount</span><span>₹${mc.disc.toFixed(2)}</span></div>` : '') + `<div class="sum-row"><span>Balance</span><span>₹${mc.unpaid.toFixed(2)}</span></div>`;
 }
 
 /* ---------------- Account statement: WhatsApp copy + PDFs (module) ---------------- */
