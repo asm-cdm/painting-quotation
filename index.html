@@ -451,20 +451,11 @@
       </div>
       <div class="footer-actions" style="margin-top:14px;">
         <button class="btn btn-teal" onclick="saveLabourEntry()">💾 Save Entry</button>
-        <button class="btn btn-ghost" id="labCancelBtn" style="display:none;" onclick="resetLabourForm()">Cancel Edit</button>
+        <button class="btn btn-ghost" id="labCancelBtn" style="display:none;" onclick="labCancel()">Cancel Edit</button>
       </div>
     </div>
 
     <div class="card" id="labourList"></div>
-
-    <div class="netbar">
-      <div class="label">Total No. of Labours</div>
-      <div class="amt" id="labourGrandNos">0</div>
-    </div>
-    <div class="netbar">
-      <div class="label">Total Amount</div>
-      <div class="amt" id="labourGrandAmount">₹0</div>
-    </div>
 
     <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('lab')">✕ Close</button>
     </div>
@@ -500,7 +491,7 @@
       <button class="btn btn-outline" onclick="editLabourFromDetail()">✎ Edit</button>
       <button class="btn btn-danger" onclick="deleteLabourFromDetail()">🗑 Delete</button>
     </div>
-    <button class="btn btn-outline btn-block no-print" onclick="showOnly('view-labour')">✕ Close</button>
+    <button class="btn btn-outline btn-block no-print" onclick="closeLabourDetail()">✕ Close</button>
   </div>
 
   <!-- ===================== COLOUR DETAILS VIEW (linked to a customer quotation) ===================== -->
@@ -570,6 +561,28 @@
       <button class="btn btn-teal" id="mdAddBtn" onclick="mtAddToCurrent()">+ Add</button>
     </div>
     <button class="btn btn-outline btn-block no-print" onclick="mtCloseDetail()">✕ Close</button>
+  </div>
+
+  <!-- ===================== LABOUR RECORDS LIST VIEW ===================== -->
+  <div class="view" id="view-lablist">
+    <div class="card" style="border-left:5px solid var(--teal);"><h3 id="lvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="lvList"></div>
+    <div class="netbar">
+      <div class="label">Total No. of Labours</div>
+      <div class="amt" id="labourGrandNos">0</div>
+    </div>
+    <div class="netbar">
+      <div class="label">Total Amount</div>
+      <div class="amt" id="labourGrandAmount">₹0</div>
+    </div>
+    <button class="btn btn-outline btn-block no-print" onclick="closeLabListView()">✕ Close</button>
+  </div>
+
+  <!-- ===================== CASH RECEIVED LIST VIEW ===================== -->
+  <div class="view" id="view-reclist">
+    <div class="card" style="border-left:5px solid var(--teal);"><h3 id="rvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="rvList"></div>
+    <button class="btn btn-outline btn-block no-print" onclick="closeRecView()">✕ Close</button>
   </div>
 
   <!-- ===================== MATERIAL BILLS LIST VIEW ===================== -->
@@ -1941,16 +1954,45 @@ function saveLabourEntry(ok){
   resetLabourForm();
   renderLabourList();
   toast('Labour entry saved!');
+  if(labReturn){ labReturn = false; openLabListView(); }
+}
+function labCancel(){
+  resetLabourForm();
+  if(labReturn){ labReturn = false; openLabListView(); }
 }
 
-function renderLabourList(){
+function renderLabourList(){              // Labour Entry shows one summary line; tap it for the records
   const el = document.getElementById('labourList');
   const scoped = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId);
-  if(scoped.length===0){
-    el.innerHTML = `<h3>Labour Records</h3><div class="empty"><div class="big">👷</div>No labour entries yet for this customer.</div>`;
-  } else {
-    const sorted = scoped.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
-    el.innerHTML = '<h3>Labour Records</h3>' + sorted.map(e=>`
+  const totalNos = scoped.reduce((s,e)=>s+e.nos,0);
+  const totalAmt = scoped.reduce((s,e)=>s+e.total,0);
+  el.innerHTML = scoped.length===0 ? '<h3>Labour Records</h3><div class="empty"><div class="big">👷</div>No labour entries yet for this customer.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openLabListView()">
+       <div><div class="who">👷 Labour Records (${scoped.length})</div><div class="meta">Total Labours ${totalNos}</div></div>
+       <div style="font-weight:700;white-space:nowrap;">₹${totalAmt.toFixed(2)} ▸</div>
+     </div>`;
+  labListRender(scoped, totalNos, totalAmt);
+  renderLabourSummary();
+}
+function openLabListView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  labListMode = true;
+  document.getElementById('lvTitle').textContent = '👷 Labour Records — ' + q.custName;
+  renderLabourList();
+  showOnly('view-lablist');
+  window.scrollTo(0,0);
+}
+function closeLabListView(){
+  labListMode = false;
+  showOnly('view-labour');
+}
+function closeLabourDetail(){
+  showOnly(labListMode ? 'view-lablist' : 'view-labour');
+}
+function labListRender(scoped, totalNos, totalAmt){
+  const el = document.getElementById('lvList'); if(!el) return;
+  const sorted = scoped.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+  el.innerHTML = '<h3>Labour Records <span class="cnt">('+sorted.length+')</span></h3>' + (sorted.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' : sorted.map(e=>`
       <div class="quote-item">
         <div>
           <div class="who">${formatDate(e.date)}</div>
@@ -1961,19 +2003,15 @@ function renderLabourList(){
           <button class="btn btn-outline btn-sm" onclick="editLabourEntry(${e.id})">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteLabourEntry(${e.id})">Del</button>
         </div>
-      </div>
-    `).join('');
-  }
-  const totalNos = scoped.reduce((s,e)=>s+e.nos,0);
-  const totalAmt = scoped.reduce((s,e)=>s+e.total,0);
+      </div>`).join(''));
   document.getElementById('labourGrandNos').textContent = totalNos;
   document.getElementById('labourGrandAmount').textContent = '₹'+totalAmt.toFixed(2);
-  renderLabourSummary();
 }
 
 function editLabourEntry(id){
   const e = labourEntries.find(x=>x.id===id);
   if(!e) return;
+  if(labListMode){ labListMode = false; showOnly('view-labour'); accOpen('lab'); labReturn = true; }
   editingLabourId = id;
   dpSet('labDate', e.date);
   document.getElementById('labNos').value = e.nos;
@@ -2022,9 +2060,11 @@ function viewLabourEntry(id){
 
 function editLabourFromDetail(){
   if(!currentLabourView) return;
+  const fromList = labListMode;
   editLabourEntry(currentLabourView.id);
   showOnly('view-labour');
   accOpen('lab');
+  labListMode = false; labReturn = fromList;
   document.getElementById('labourFormCard').scrollIntoView({behavior:'smooth'});
 }
 
@@ -2037,7 +2077,7 @@ function deleteLabourFromDetailDo(id){
   labourEntries = labourEntries.filter(e=>e.id!==id);
   saveLabourData(labourEntries);
   renderLabourList();
-  showOnly('view-labour');
+  showOnly(labListMode ? 'view-lablist' : 'view-labour');
   toast('Deleted');
 }
 
@@ -2199,7 +2239,7 @@ const LB = {
   mat:{ key:'bs_materials', title:'Materials Used', amtLabel:'Amount', hasBill:true, data:lbLoad('bs_materials') }
 };
 const lbEditing = { rec:null, mat:null };
-let lbBillsMode = false, lbBillsReturn = false;
+let lbBillsMode = false, lbBillsReturn = false, lbRecMode = false, lbRecReturn = false, labListMode = false, labReturn = false;
 const CL = { key:'bs_colours', data:lbLoad('bs_colours') };
 function clSaveAll(){ if(VIEW_ONLY) return; localStorage.setItem(CL.key, JSON.stringify(CL.data)); }
 const MT = { key:'bs_matlist', data:lbLoad('bs_matlist') };
@@ -2253,6 +2293,7 @@ function lbReset(kind){
 function lbCancel(kind){
   lbReset(kind);
   if(kind==='mat' && lbBillsReturn){ lbBillsReturn = false; openBillsView(); }
+  if(kind==='rec' && lbRecReturn){ lbRecReturn = false; openRecView(); }
 }
 function lbSave(kind, ok){
   const p = 'lb-'+kind, c = LB[kind];
@@ -2274,11 +2315,13 @@ function lbSave(kind, ok){
   lbRender(kind);
   toast(c.title+' saved!');
   if(kind==='mat' && lbBillsReturn){ lbBillsReturn = false; openBillsView(); }
+  if(kind==='rec' && lbRecReturn){ lbRecReturn = false; openRecView(); }
 }
 function lbEdit(kind, id){
   const p = 'lb-'+kind, e = LB[kind].data.find(x=>x.id===id);
   if(!e) return;
   if(kind==='mat' && lbBillsMode){ lbBillsMode = false; showOnly('view-labour'); accOpen('mat'); lbBillsReturn = true; }
+  if(kind==='rec' && lbRecMode){ lbRecMode = false; showOnly('view-labour'); accOpen('rec'); lbRecReturn = true; }
   lbEditing[kind] = id;
   dpSet(p+'-date', e.date);
   document.getElementById(p+'-amount').value = e.amount;
@@ -2297,6 +2340,46 @@ function lbDelDo(kind, id){
   lbSaveAll(kind);
   lbRender(kind);
   toast('Deleted');
+}
+function lbRenderRecLine(){               // Cash Received shows one summary line; tap it for the received list
+  const el = document.getElementById('lb-rec-list');
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  const list = lbScoped('rec'), total = list.reduce((t,e)=>t+e.amount,0);
+  el.innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openRecView()">
+       <div><div class="who">💰 Received (${list.length})</div><div class="meta">Balance to receive ₹${(q ? q.netAmount - total : 0).toFixed(2)}</div></div>
+       <div style="font-weight:700;white-space:nowrap;">₹${total.toFixed(2)} ▸</div>
+     </div>`;
+  recRender();
+}
+function openRecView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  lbRecMode = true;
+  document.getElementById('rvTitle').textContent = '💰 Cash Received — ' + q.custName;
+  recRender();
+  showOnly('view-reclist');
+  window.scrollTo(0,0);
+}
+function closeRecView(){
+  lbRecMode = false;
+  showOnly('view-labour');
+}
+function recRender(){
+  const el = document.getElementById('rvList'); if(!el) return;
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  const list = lbScoped('rec').sort((a,b)=> new Date(b.date) - new Date(a.date)), total = list.reduce((t,e)=>t+e.amount,0);
+  el.innerHTML = '<h3>Received <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' : list.map(e=>`
+      <div class="quote-item">
+        <div>
+          <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.amount.toFixed(2)}</span></div>
+          <div class="meta">${escH(e.type||'')}${e.note?' · '+escH(e.note):''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline btn-sm" onclick="lbEdit('rec',${e.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="lbDel('rec',${e.id})">Del</button>
+        </div>
+      </div>`).join('')) +
+    `<div class="sum-row big"><span>Total Received</span><span>₹${total.toFixed(2)}</span></div><div class="sum-row"><span>Balance to receive</span><span>₹${(q ? q.netAmount - total : 0).toFixed(2)}</span></div>`;
 }
 function lbRenderMatLine(){               // Materials Used shows one summary line; tap it for the bills
   const el = document.getElementById('lb-mat-list');
@@ -2339,6 +2422,7 @@ function billsRender(){
 function lbScoped(kind){ return LB[kind].data.filter(e=>e.quoteId===currentLabourQuoteId); }
 function lbRender(kind){
   if(kind==='mat'){ lbRenderMatLine(); renderLabourSummary(); return; }
+  if(kind==='rec'){ lbRenderRecLine(); renderLabourSummary(); return; }
   const el = document.getElementById('lb-'+kind+'-list');
   const list = lbScoped(kind).sort((a,b)=> new Date(b.date) - new Date(a.date));
   const total = list.reduce((s,e)=>s+e.amount,0);
@@ -2388,7 +2472,7 @@ function accSync(){                      // an open module takes over the screen
     document.getElementById('accFocusTitle').textContent = ACC_TITLES[open] + (q ? ' — ' + q.custName : '');
   }
 }
-function accCloseAll(){ ACC_KEYS.forEach(k=>accSet(k, false)); lbBillsReturn = false; accSync(); }
+function accCloseAll(){ ACC_KEYS.forEach(k=>accSet(k, false)); lbBillsReturn = false; lbRecReturn = false; labReturn = false; lbBillsMode = false; lbRecMode = false; labListMode = false; accSync(); }
 function accOpen(key){ accCloseAll(); accSet(key, true); accSync(); window.scrollTo(0,0); }
 function accToggle(key){
   if(document.getElementById('accB-'+key).classList.contains('open')){ accCloseAll(); window.scrollTo(0,0); }
