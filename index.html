@@ -516,7 +516,7 @@
       <div class="field"><label>Variant</label><div class="tf"><input type="text" id="clVariant" placeholder="Variant" autocomplete="off"></div></div>
       <div class="footer-actions" style="margin-top:6px;">
         <button class="btn btn-teal" onclick="clSave()">💾 Save Entry</button>
-        <button class="btn btn-ghost" id="clCancelBtn" style="display:none;" onclick="clReset()">Cancel Edit</button>
+        <button class="btn btn-ghost" id="clCancelBtn" style="display:none;" onclick="clCancel()">Cancel Edit</button>
       </div>
     </div>
     <div class="card" id="clList"></div>
@@ -554,6 +554,20 @@
       <button class="btn btn-outline btn-block" onclick="mtPdf()">📄 View/PDF — Materials</button>
     </div>
     <button class="btn btn-outline btn-block no-print" onclick="closeMatView()">✕ Close</button>
+  </div>
+
+  <!-- ===================== COLOUR ENTRIES LIST VIEW ===================== -->
+  <div class="view" id="view-cllist">
+    <div class="card" style="border-left:5px solid var(--ochre);"><h3 id="clvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="clvList"></div>
+    <button class="btn btn-outline btn-block no-print" onclick="closeClListView()">✕ Close</button>
+  </div>
+
+  <!-- ===================== MATERIALS LIST VIEW (one line per material) ===================== -->
+  <div class="view" id="view-mtlist">
+    <div class="card" style="border-left:5px solid var(--ochre);"><h3 id="mtvTitle" style="margin:0;"></h3></div>
+    <div class="card" id="mtvList"></div>
+    <button class="btn btn-outline btn-block no-print" onclick="closeMtListView()">✕ Close</button>
   </div>
 
   <!-- ===================== MATERIAL DETAIL VIEW (one material: its entries with Edit / Delete) ===================== -->
@@ -2537,7 +2551,7 @@ function tfUnique(field){            // past values of one field across all cust
 }
 
 /* ---------------- Colour Details module (Create / Edit / Delete + View/PDF only) ---------------- */
-let clEditingId = null;
+let clEditingId = null, clListMode = false, clReturn = false;
 function clScoped(){ return CL.data.filter(e=>e.quoteId===currentLabourQuoteId); }
 function clUpdateCount(){
   const el = document.getElementById('clBtnCnt'); if(!el) return;
@@ -2551,12 +2565,14 @@ function openColourView(){
   tfAttach('clPlace', ()=>tfUnique('place'));
   tfAttach('clName', ()=>tfUnique('name'));
   tfAttach('clVariant', ()=>tfUnique('variant'));
+  clListMode = false; clReturn = false;
   clReset();
   clRender();
   showOnly('view-colour');
   window.scrollTo(0,0);
 }
 function closeColourView(){
+  clListMode = false; clReturn = false;
   clReset();
   clUpdateCount();
   showOnly('view-labour');
@@ -2578,12 +2594,20 @@ function clSave(){
   if(clEditingId) CL.data = CL.data.map(e=>e.id===clEditingId ? entry : e);
   else CL.data.push(entry);
   clSaveAll();
+  const back = clReturn; clReturn = false;
   clReset();
   clRender();
   toast('Colour entry saved!');
+  if(back) openClListView();
+}
+function clCancel(){
+  const back = clReturn; clReturn = false;
+  clReset();
+  if(back) openClListView();
 }
 function clEdit(id){
   const e = CL.data.find(x=>x.id===id); if(!e) return;
+  if(clListMode){ clListMode = false; clReturn = true; showOnly('view-colour'); window.scrollTo(0,0); }
   clEditingId = id;
   document.getElementById('clPlace').value = e.place||'';
   document.getElementById('clCode').value = e.code||'';
@@ -2603,8 +2627,30 @@ function clDelDo(id){
   clRender();
   toast('Deleted');
 }
-function clRender(){
-  const el = document.getElementById('clList');
+function clRender(){                      // Colour Details shows one summary line; tap it for the entries
+  const list = clScoped();
+  document.getElementById('clList').innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openClListView()">
+       <div><div class="who">🎨 Colour Entries (${list.length})</div></div>
+       <div style="font-weight:700;white-space:nowrap;">▸</div>
+     </div>`;
+  clListRender();
+  clUpdateCount();
+}
+function openClListView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  clListMode = true;
+  document.getElementById('clvTitle').textContent = '🎨 Colour Entries — ' + q.custName;
+  clListRender();
+  showOnly('view-cllist');
+  window.scrollTo(0,0);
+}
+function closeClListView(){
+  clListMode = false;
+  showOnly('view-colour');
+}
+function clListRender(){
+  const el = document.getElementById('clvList'); if(!el) return;
   const list = clScoped();
   el.innerHTML = '<h3>Colour Entries <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' :
     list.map(e=>`
@@ -2618,7 +2664,6 @@ function clRender(){
           <button class="btn btn-danger btn-sm" onclick="clDel(${e.id})">Del</button>
         </div>
       </div>`).join(''));
-  clUpdateCount();
 }
 function clPdf(){
   const q = quotes.find(x=>x.id===currentLabourQuoteId);
@@ -2772,17 +2817,35 @@ function mtDelDo(id){
 }
 function mtKey(e){ return (e.name||'').trim().toLowerCase() + '|' + e.unit; }
 function mtGroupEntries(key){ return mtScoped().filter(e=>mtKey(e)===key); }
-function mtRender(){                      // one line per material (same name + unit added up); tap a line for its entries
-  const el = document.getElementById('mtList');
+function mtRender(){                      // Add Materials shows one summary line; tap it for the materials (one line per material)
   const list = mtScoped();
   mtGroups = mtConsolidate(list);
+  document.getElementById('mtList').innerHTML = mtGroups.length===0 ? '<div class="empty" style="padding:8px;">No materials yet.</div>' :
+    `<div class="quote-item" style="cursor:pointer;" onclick="openMtListView()">
+       <div><div class="who">📦 Materials (${mtGroups.length})</div></div>
+       <div style="font-weight:700;white-space:nowrap;">▸</div>
+     </div>`;
+  mtListRender();
+  mtUpdateCount();
+}
+function openMtListView(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  document.getElementById('mtvTitle').textContent = '📦 Materials — ' + q.custName;
+  mtListRender();
+  showOnly('view-mtlist');
+  window.scrollTo(0,0);
+}
+function closeMtListView(){
+  showOnly('view-matlist');
+}
+function mtListRender(){
+  const el = document.getElementById('mtvList'); if(!el) return;
   el.innerHTML = '<h3>Materials <span class="cnt">('+mtGroups.length+')</span></h3>' + (mtGroups.length===0 ? '<div class="empty" style="padding:8px;">No materials yet.</div>' :
     mtGroups.map((g,i)=>`
       <div class="quote-item" style="cursor:pointer;" onclick="mtOpenDetail(mtGroups[${i}].key)">
         <div><div class="who">${escH(g.name)}</div></div>
         <div style="font-weight:700;white-space:nowrap;">${fmtQty(g.total)} ${escH(g.unit)} ▸</div>
       </div>`).join(''));
-  mtUpdateCount();
 }
 function mtOpenDetail(key){
   const entries = mtGroupEntries(key);
@@ -2811,7 +2874,7 @@ function mtOpenDetail(key){
 function mtCloseDetail(){
   mtDetailKey = null;
   mtRender();
-  showOnly('view-matlist');
+  showOnly('view-mtlist');
   window.scrollTo(0,0);
 }
 function mtAddToCurrent(){                // "+ Add Putty": form opens with the name and unit already filled
