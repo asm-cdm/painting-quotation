@@ -165,6 +165,8 @@
   body.viewonly [onclick^="editLabourEntry"], body.viewonly [onclick^="deleteLabourEntry"], body.viewonly [onclick^="deleteLabourFromDetail"]{display:none !important;}
  .acc-line{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;font-weight:600;font-size:.95rem;}
   .acc-line .acc-val{margin-left:auto;font-size:.85rem;font-weight:700;}
+  .acc-line .acc-val.blue{color:#1d4ed8;}
+  #accFocusVal.blue{color:#1d4ed8;} #accFocusVal.red{color:#b3321f;}
   .acc-line .acc-val.red{color:#b3321f;} .acc-line .acc-val.green{color:#17674c;}
   .acc-line .acc-arr{color:#6b6558;font-size:.9rem;}
   .acc-line.open{border-color:var(--teal);background:var(--wall);margin-bottom:4px;}
@@ -413,7 +415,7 @@
         <button class="btn btn-ochre btn-sm" onclick="openMatView()">📦 Add Materials<span class="cnt" id="mtBtnCnt"></span></button>
       </div>
     </div>
-    <div class="card" id="accFocusHead" style="border-left:5px solid var(--teal);"><h3 id="accFocusTitle" style="margin:0;"></h3></div>
+    <div class="card" id="accFocusHead" style="border-left:5px solid var(--teal);"><h3 style="margin:0;display:flex;justify-content:space-between;align-items:center;gap:10px;"><span id="accFocusTitle"></span><span class="acc-val" id="accFocusVal" style="font-weight:700;"></span></h3></div>
 
     <div class="acc-line" id="accL-sum" onclick="accToggle('sum')"><span>📊 Account Summary</span><span class="acc-val" id="accV-sum"></span><span class="acc-arr" id="accA-sum">▸</span></div>
     <div class="acc-body" id="accB-sum">
@@ -2484,7 +2486,7 @@ function renderLabourSummary(){
     row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) + row('Materials paid', mc.paid) +
     (mc.disc>0 ? row('Materials discount', mc.disc) : '') + row('Materials unpaid', mc.unpaid) +
     row('Net (received − labour − materials paid)', net, 'big');
-  accRefresh(lab, bal, mc.unpaid, rec, aw);
+  accRefresh(lab, bal, mc.unpaid, rec, aw, rec - (lab + mc.bills));   // reminder only: received - (labour + all material bills)
 }
 
 /* ---------------- Labour screen accordion (module): one line each, one open at a time ---------------- */
@@ -2498,6 +2500,9 @@ function accSet(key, on){
 function accSync(){                      // an open module takes over the screen; none open = the list of lines
   const open = ACC_KEYS.find(k=>document.getElementById('accB-'+k).classList.contains('open'));
   document.getElementById('view-labour').classList.toggle('acc-focus', !!open);
+  const fv = document.getElementById('accFocusVal');
+  fv.textContent = open==='sum' ? accRemText : '';
+  fv.className = 'acc-val ' + (open==='sum' ? accRemCls : '');
   if(open){
     const q = quotes.find(x=>x.id===currentLabourQuoteId);
     document.getElementById('accFocusTitle').textContent = ACC_TITLES[open] + (q ? ' — ' + q.custName : '');
@@ -2509,10 +2514,13 @@ function accToggle(key){
   if(document.getElementById('accB-'+key).classList.contains('open')){ accCloseAll(); window.scrollTo(0,0); }
   else accOpen(key);
 }
-function accRefresh(lab, bal, unpaid, rec, aw){
+let accRemText = '', accRemCls = '';
+function accRefresh(lab, bal, unpaid, rec, aw, rem){
   const m = n => '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:2});
   const put = (k, text, cls) => { const el = document.getElementById('accV-'+k); if(el){ el.textContent = text; el.className = 'acc-val' + (cls ? ' '+cls : ''); } };
-  put('sum', 'Bal ' + m(bal), bal>0 ? 'red' : 'green');
+  accRemText = (rem>=0 ? '+' : '−') + m(Math.abs(rem)); accRemCls = rem>=0 ? 'blue' : 'red';
+  put('sum', accRemText, accRemCls);
+  accSync();
   put('lab', m(lab));
   put('add', m(aw||0));
   put('rec', m(rec));
