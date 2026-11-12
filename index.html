@@ -3287,9 +3287,8 @@ function acctData(){
 }
 function customerStatementText(){
   const d = acctData();
-  const L = ['*Payment Statement*'];
-  if(profile && profile.company) L.push(profile.company);
-  L.push('Customer: '+d.q.custName, 'Quotation date: '+qd(d.q), 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
+  const L = ['*Payment Statement*', '*'+d.q.custName+'*'];
+  L.push('Quotation date: '+qd(d.q), 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
   if(d.aw.length){
     L.push('*Additional Works:*');
     d.aw.forEach(e=>L.push('- '+formatDate(e.date)+': '+e.name+' ('+awDesc(e,true)+'): Rs.'+e.amount.toFixed(2)));
@@ -3297,7 +3296,7 @@ function customerStatementText(){
   }
   if(d.rec.length){
     L.push('*Received:*');
-    d.rec.forEach(e=>L.push('- '+formatDate(e.date)+': Rs.'+e.amount.toFixed(2)+' ('+e.type+')'+(e.note?' '+e.note:'')));
+    d.rec.forEach(e=>L.push('- '+formatDate(e.date)+': Rs.'+e.amount.toFixed(2)+' ('+e.type+')'));
     L.push('Total received: Rs.'+d.recT.toFixed(2), '');
   }
   L.push('*Balance to receive: Rs.'+d.bal.toFixed(2)+'*');
@@ -3339,8 +3338,14 @@ function acctPdf(mode){
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
   doc.text(full ? 'Account Statement (internal)' : 'Payment Statement', mx, y); y += 20;
   doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  if(profile && profile.company){ doc.text(profile.company, mx, y); y += 14; }
-  doc.text('Customer: '+d.q.custName, mx, y); y += 14;
+  if(full){
+    if(profile && profile.company){ doc.text(profile.company, mx, y); y += 14; }
+    doc.text('Customer: '+d.q.custName, mx, y); y += 14;
+  } else {
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text(d.q.custName, mx, y); y += 16;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  }
   doc.text('Quotation date: '+qd(d.q), mx, y); y += 20;
 
   line('Quotation amount', d.q.netAmount);
@@ -3359,8 +3364,10 @@ function acctPdf(mode){
 
   table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
     d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
-  table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
+  if(full) table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
     d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
+  else table('Cash Received', ['Date','Amount','Type'], [mx, mx+90, mx+180],
+    d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type]));
   if(full){
     table('Labour', ['Date','No. of Labour','Rate','Misc','Total'], [mx, mx+90, mx+180, mx+260, mx+350],
       d.lab.map(e=>[formatDate(e.date), e.nos, 'Rs.'+e.rate, 'Rs.'+e.misc.toFixed(2), 'Rs.'+e.total.toFixed(2)]));
