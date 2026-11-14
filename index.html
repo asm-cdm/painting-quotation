@@ -3376,7 +3376,12 @@ function acctPdf(mode){
     if(d.rec.length) total('Total Received', d.recT);
     table('Labour', ['Date','No. of Labour','Rate','Misc','Total'], [mx, mx+90, mx+180, mx+260, mx+350],
       d.lab.map(e=>[formatDate(e.date), e.nos, 'Rs.'+e.rate, 'Rs.'+e.misc.toFixed(2), 'Rs.'+e.total.toFixed(2)]));
-    if(d.lab.length) total('Labour Total', d.labT);
+    if(d.lab.length){                       // Labour Total row: total No. of Labour under its column, amount on the right
+      const nosT = d.lab.reduce((t,e)=>t+e.nos,0);
+      ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text('Labour Total', mx, y); doc.text(fmtQty(nosT), mx+90, y);
+      doc.text('Rs.'+d.labT.toFixed(2), 555, y, {align:'right'}); y += 22;
+    }
     table('Materials Bills', ['Date','Bill No.','Amount','Status','Note'], [mx, mx+90, mx+180, mx+270, mx+350],
       d.mat.map(e=>[formatDate(e.date), e.bill||'-', 'Rs.'+e.amount.toFixed(2), e.paid!==false ? 'Paid '+(e.type||'') : 'Unpaid', e.note||'']));
     if(d.mat.length) total('Materials Bills Total', d.mc.bills);
