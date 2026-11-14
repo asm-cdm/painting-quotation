@@ -1955,11 +1955,16 @@ function openLabourForQuote(quoteId){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
 }
 
+function lastLabourRate(){               // rate of the latest entry (this customer first, else any customer)
+  const latest = a => a.reduce((m,e)=> (!m || e.id>m.id) ? e : m, null);
+  const e = latest(labourEntries.filter(x=>x.quoteId===currentLabourQuoteId)) || latest(labourEntries);
+  return e ? e.rate : '';
+}
 function resetLabourForm(){
   editingLabourId = null;
   dpSet('labDate', todayStr());
   document.getElementById('labNos').value = '';
-  document.getElementById('labRate').value = '';
+  document.getElementById('labRate').value = lastLabourRate();
   document.getElementById('labMisc').value = '';
   updateLabourTotalPreview();
   document.getElementById('labourFormTitle').textContent = 'Add Labour Entry';
@@ -3348,33 +3353,52 @@ function acctPdf(mode){
   }
   doc.text('Quotation date: '+qd(d.q), mx, y); y += 20;
 
-  line('Quotation amount', d.q.netAmount);
-  if(d.awT>0){ line('Additional works', d.awT); line('Total amount', d.q.netAmount+d.awT); }
-  line('Received so far', d.recT);
-  line('Balance to receive', d.bal, true);
-  if(full){
-    y += 6;
-    line('Labour total', d.labT);
-    line('Materials bills total', d.mc.bills);
-    line('Materials paid', d.mc.paid);
-    if(d.mc.disc>0) line('Materials discount', d.mc.disc);
-    line('Materials unpaid', d.mc.unpaid);
-    line('Net (received - labour - materials paid)', d.net, true);
-  }
-
-  table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
-    d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
-  if(full) table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
-    d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
-  else table('Cash Received', ['Date','Amount','Type'], [mx, mx+90, mx+180],
-    d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type]));
-  if(full){
+  if(!full){
+    line('Quotation amount', d.q.netAmount);
+    if(d.awT>0){ line('Additional works', d.awT); line('Total amount', d.q.netAmount+d.awT); }
+    line('Received so far', d.recT);
+    line('Balance to receive', d.bal, true);
+    table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
+      d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
+    table('Cash Received', ['Date','Amount','Type'], [mx, mx+90, mx+180],
+      d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type]));
+  } else {
+    // every section ends with its own total, then one blank line
+    const total = (label, val) => {
+      ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(label, mx, y); doc.text('Rs.'+val.toFixed(2), 555, y, {align:'right'}); y += 22;
+    };
+    table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
+      d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
+    if(d.aw.length) total('Additional Works Total', d.awT);
+    table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
+      d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
+    if(d.rec.length) total('Total Received', d.recT);
     table('Labour', ['Date','No. of Labour','Rate','Misc','Total'], [mx, mx+90, mx+180, mx+260, mx+350],
       d.lab.map(e=>[formatDate(e.date), e.nos, 'Rs.'+e.rate, 'Rs.'+e.misc.toFixed(2), 'Rs.'+e.total.toFixed(2)]));
+    if(d.lab.length) total('Labour Total', d.labT);
     table('Materials Bills', ['Date','Bill No.','Amount','Status','Note'], [mx, mx+90, mx+180, mx+270, mx+350],
       d.mat.map(e=>[formatDate(e.date), e.bill||'-', 'Rs.'+e.amount.toFixed(2), e.paid!==false ? 'Paid '+(e.type||'') : 'Unpaid', e.note||'']));
+    if(d.mat.length) total('Materials Bills Total', d.mc.bills);
     table('Material Payments', ['Date','Mode','Paid','Discount','Balance'], [mx, mx+90, mx+170, mx+270, mx+370],
       d.mp.map(e=>[formatDate(e.date), e.mode, 'Rs.'+e.paid.toFixed(2), 'Rs.'+e.discount.toFixed(2), 'Rs.'+e.after.toFixed(2)]));
+    if(d.mp.length){ total('Payments Total', d.mc.payPaid); if(d.mc.disc>0) total('Discount', d.mc.disc); }
+
+    // ---- Profit & Loss account ----
+    ensure(190); y += 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('PROFIT & LOSS ACCOUNT', mx, y); y += 6;
+    doc.setLineWidth(0.8); doc.line(mx, y, 555, y); y += 16;
+    line('Quotation amount', d.q.netAmount);
+    if(d.awT>0){ line('Additional work', d.awT); line('Total', d.q.netAmount+d.awT); }
+    y += 8;
+    line('Amount received', d.recT);
+    line('Labour', d.labT);
+    line('Material net', d.mc.paid);
+    y += 6; doc.setLineWidth(0.5); doc.line(mx, y-10, 555, y-10);
+    const net = Math.round(d.net*100)/100;
+    ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text('Net Total Amount', mx, y);
+    doc.text((net<0?'-':'')+'Rs.'+Math.abs(net).toFixed(2)+(net>0?'  (Profit)':net<0?'  (Loss)':''), 555, y, {align:'right'}); y += 18;
   }
   showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
 }
