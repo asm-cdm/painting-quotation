@@ -3393,9 +3393,10 @@ function acctPdf(mode){
     y += 8;
     line('Amount received', d.recT);
     line('Labour', d.labT);
-    line('Material net', d.mc.paid);
+    const matNet = Math.round((d.mc.bills - d.mc.disc)*100)/100;      // all bills (paid + unpaid) after discount
+    line('Material net', matNet);
     y += 6; doc.setLineWidth(0.5); doc.line(mx, y-10, 555, y-10);
-    const net = Math.round(d.net*100)/100;
+    const net = Math.round((d.recT - d.labT - matNet)*100)/100;
     ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(12);
     doc.text('Net Total Amount', mx, y);
     doc.text((net<0?'-':'')+'Rs.'+Math.abs(net).toFixed(2)+(net>0?'  (Profit)':net<0?'  (Loss)':''), 555, y, {align:'right'}); y += 18;
