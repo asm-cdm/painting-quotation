@@ -3291,13 +3291,13 @@ function customerStatementText(){
   L.push('Quotation date: '+qd(d.q), 'Quotation amount: Rs.'+d.q.netAmount.toFixed(2), '');
   if(d.aw.length){
     L.push('*Additional Works:*');
-    d.aw.forEach(e=>L.push('- '+formatDate(e.date)+': '+e.name+' ('+awDesc(e,true)+'): Rs.'+e.amount.toFixed(2)));
-    L.push('Additional works total: Rs.'+d.awT.toFixed(2), 'Total amount: Rs.'+(d.q.netAmount+d.awT).toFixed(2), '');
+    d.aw.forEach(e=>L.push(e.kind==='lump' ? e.name+' - Rs.'+e.amount.toFixed(2) : e.name+' - '+awDesc(e,true)+' = Rs.'+e.amount.toFixed(2)));
+    L.push('Additional Works Total: Rs.'+d.awT.toFixed(2), '', 'Total amount: Rs.'+(d.q.netAmount+d.awT).toFixed(2), '');
   }
   if(d.rec.length){
     L.push('*Received:*');
-    d.rec.forEach(e=>L.push('- '+formatDate(e.date)+': Rs.'+e.amount.toFixed(2)+' ('+e.type+')'));
-    L.push('Total received: Rs.'+d.recT.toFixed(2), '');
+    d.rec.forEach(e=>L.push(formatDate(e.date)+' Rs.'+e.amount.toFixed(2)+' ('+e.type+')'));
+    L.push('', 'Total Received: Rs.'+d.recT.toFixed(2), '');
   }
   L.push('*Balance to receive: Rs.'+d.bal.toFixed(2)+'*');
   return L.join('\n');
