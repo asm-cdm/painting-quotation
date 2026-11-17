@@ -186,7 +186,8 @@
   .sv-tab.active{background:var(--teal);color:#fff;border-color:var(--teal);}
   .sv-search{display:flex;gap:6px;align-items:center;}
   .sv-search input{flex:1;}
-  body.viewonly #cvFormCard, body.viewonly [onclick^="cvEdit"], body.viewonly [onclick^="cvDel"]{display:none !important;}
+  body.viewonly [onclick^="cvOpenForm"], body.viewonly [onclick^="cvEdit"], body.viewonly [onclick^="cvDel"]{display:none !important;}
+  .cv-table{width:100%;border-collapse:collapse;font-size:.86rem;} .cv-table th{text-align:left;font-size:.72rem;color:#6b6558;padding:4px;border-bottom:1.5px solid var(--line);} .cv-table td{padding:8px 4px;border-bottom:1px solid var(--line);vertical-align:middle;} .cv-table .num{text-align:center;white-space:nowrap;} .cv-table .act{text-align:right;white-space:nowrap;}
   .cv-row{border-bottom:1px solid var(--line);padding:10px 0;} .cv-row:last-child{border-bottom:none;}
   .tf{position:relative;}
   .tf-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1.5px solid var(--teal);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:190px;overflow-y:auto;margin-top:2px;}
@@ -686,31 +687,22 @@
   </div>
 
   <!-- ===================== SETTINGS / PROFILE VIEW ===================== -->
-  <!-- ===================== COVERAGE TAB (paint coverage + litres estimate) ===================== -->
+  <!-- ===================== COVERAGE TAB (paint coverage table + litres estimate) ===================== -->
   <div class="view" id="view-coverage">
     <div class="card">
-      <h3>Coverage</h3>
-      <p style="font-size:.8rem;color:#6b6558;margin:0 0 8px;">Litres = Sqft × Coats ÷ Coverage per litre × (1 + wastage)</p>
-      <div class="field"><label>Wastage (%)</label><input type="number" id="cvWaste" inputmode="decimal" step="any" oninput="cvWasteChange()"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+        <h3 style="margin:0;">Coverage</h3>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;margin:0;">Wastage <input type="number" id="cvWaste" inputmode="decimal" step="any" oninput="cvWasteChange()" style="width:64px;padding:6px 8px;"> %</label>
+      </div>
+      <p style="font-size:.78rem;color:#6b6558;margin:0 0 8px;">Litres = Sqft × Coats ÷ Coverage per litre × (1 + wastage)</p>
+      <div id="cvList"></div>
+      <button class="btn btn-ochre btn-sm" style="margin-top:10px;" onclick="cvOpenForm()">+ Add</button>
     </div>
     <div class="card">
-      <h3>Estimate from a quotation</h3>
-      <div class="field"><label>Quotation</label><div class="tf"><input type="text" id="cvQuote" placeholder="Type customer name…" autocomplete="off"></div></div>
+      <h3>Litres required</h3>
+      <div class="field"><label>🔍 Customer</label><div class="tf"><input type="text" id="cvQuote" placeholder="Type customer name…" autocomplete="off"></div></div>
       <div id="cvEst"></div>
     </div>
-    <div class="card" id="cvFormCard">
-      <h3 id="cvFormTitle">Add Coverage</h3>
-      <div class="field"><label>Type of work</label><input type="text" id="cvName" placeholder="e.g. Exterior Emulsion" autocomplete="off"></div>
-      <div class="row2">
-        <div class="field"><label>Coverage per litre (sqft)</label><input type="number" id="cvCov" placeholder="100" inputmode="decimal" step="any"></div>
-        <div class="field"><label>Typical coats</label><input type="number" id="cvCoats" placeholder="2" inputmode="decimal" step="any"></div>
-      </div>
-      <div class="footer-actions">
-        <button class="btn btn-teal" onclick="cvSave()">💾 Save</button>
-        <button class="btn btn-ghost" id="cvCancel" style="display:none;" onclick="cvReset()">Cancel Edit</button>
-      </div>
-    </div>
-    <div class="card" id="cvList"></div>
   </div>
 
   <div class="view" id="view-settings">
@@ -3530,59 +3522,64 @@ function cvWasteChange(){
   cvSaveAll();
   cvRows.forEach((r,i)=>cvRowCalc(i));
 }
-function cvReset(){
-  cvEditingId = null;
-  ['cvName','cvCov','cvCoats'].forEach(id=>document.getElementById(id).value = '');
-  document.getElementById('cvFormTitle').textContent = 'Add Coverage';
-  document.getElementById('cvCancel').style.display = 'none';
+function cvOpenForm(id){                  // Add / Edit in a centered pop-up
+  cvCloseForm();
+  const r = id ? CV.data.find(x=>x.id===id) : null;
+  cvEditingId = r ? r.id : null;
+  const d = document.createElement('div'); d.className = 'mbx'; d.id = 'cvModal'; d.style.zIndex = 100;
+  d.innerHTML = `<div class="mbx-card" style="text-align:left;width:100%;max-width:340px;">
+    <h3 style="text-align:center;">${r ? 'Edit Coverage' : 'Add Coverage'}</h3>
+    <div class="field"><label>Type of work</label><input type="text" id="cvName" placeholder="e.g. Exterior Emulsion" autocomplete="off"></div>
+    <div class="row2">
+      <div class="field"><label>Coverage per litre (sqft)</label><input type="number" id="cvCov" placeholder="100" inputmode="decimal" step="any"></div>
+      <div class="field"><label>Typical coats</label><input type="number" id="cvCoats" placeholder="2" inputmode="decimal" step="any"></div>
+    </div>
+    <div class="footer-actions" style="justify-content:center;margin-top:6px;">
+      <button class="btn btn-teal" onclick="cvSave()">💾 Save</button>
+      <button class="btn btn-outline" onclick="cvCloseForm()">Cancel</button>
+    </div></div>`;
+  document.body.appendChild(d);
+  if(r){ document.getElementById('cvName').value = r.name; document.getElementById('cvCov').value = r.cov; document.getElementById('cvCoats').value = r.coats; }
+  document.getElementById('cvName').focus();
 }
+function cvCloseForm(){ const m = document.getElementById('cvModal'); if(m) m.remove(); cvEditingId = null; }
 function cvSave(){
   const name = document.getElementById('cvName').value.trim();
   const cov = parseFloat(document.getElementById('cvCov').value)||0, coats = parseFloat(document.getElementById('cvCoats').value)||0;
   if(!name){ toast('Enter the type of work'); return; }
   if(!(cov>0)){ toast('Enter coverage per litre'); return; }
   if(!(coats>0)){ toast('Enter the typical coats'); return; }
-  if(cvEditingId){ CV.data = CV.data.map(r=>r.id===cvEditingId ? Object.assign({}, r, {name, cov, coats}) : r); }
+  if(cvEditingId){ const id = cvEditingId; CV.data = CV.data.map(r=>r.id===id ? Object.assign({}, r, {name, cov, coats}) : r); }
   else CV.data.push({ id: Date.now(), name, cov, coats });
   cvSaveAll();
-  cvReset();
+  cvCloseForm();
   cvListRender();
   cvRows.forEach(r=>{ if(!r.recId){ const m = cvMatch(r.name); if(m){ r.recId = m.id; r.coats = m.coats; } } });   // a new record can now match headings that had none
   cvEstRender();
   toast('Coverage saved!');
 }
-function cvEdit(id){
-  const r = CV.data.find(x=>x.id===id); if(!r) return;
-  cvEditingId = id;
-  document.getElementById('cvName').value = r.name;
-  document.getElementById('cvCov').value = r.cov;
-  document.getElementById('cvCoats').value = r.coats;
-  document.getElementById('cvFormTitle').textContent = 'Edit Coverage';
-  document.getElementById('cvCancel').style.display = 'inline-block';
-  document.getElementById('cvFormCard').scrollIntoView({behavior:'smooth'});
-}
+function cvEdit(id){ cvOpenForm(id); }
 function cvDel(id){ cfm('Delete this coverage record?', ()=>cvDelDo(id), 'Delete', 'Delete coverage'); }
 function cvDelDo(id){
   CV.data = CV.data.filter(r=>r.id!==id || r.locked);
   cvSaveAll();
-  if(cvEditingId===id) cvReset();
   cvRows.forEach(r=>{ if(r.recId===id) r.recId = null; });
   cvListRender();
   cvEstRender();
   toast('Deleted');
 }
 function cvListRender(){
-  document.getElementById('cvList').innerHTML = '<h3>Coverage Records <span class="cnt">('+CV.data.length+')</span></h3>' + CV.data.map(r=>`
-    <div class="quote-item">
-      <div>
-        <div class="who">${escH(r.name)}</div>
-        <div class="meta">${cvNum(r.cov)} sqft/ltr · ${cvNum(r.coats)} coat${r.coats===1?'':'s'}</div>
-      </div>
-      <div class="actions">
-        <button class="btn btn-outline btn-sm" onclick="cvEdit(${r.id})">Edit</button>
-        ${r.locked ? '' : `<button class="btn btn-danger btn-sm" onclick="cvDel(${r.id})">Del</button>`}
-      </div>
-    </div>`).join('');
+  document.getElementById('cvList').innerHTML = `<table class="cv-table">
+    <tr><th>Type of work</th><th class="num">Cov/ltr</th><th class="num">Coats</th><th></th></tr>` + CV.data.map(r=>`
+    <tr>
+      <td>${escH(r.name)}</td>
+      <td class="num">${cvNum(r.cov)}</td>
+      <td class="num">${cvNum(r.coats)}</td>
+      <td class="act">
+        <button class="btn btn-outline btn-sm" onclick="cvEdit(${r.id})">✎</button>
+        ${r.locked ? '' : `<button class="btn btn-danger btn-sm" onclick="cvDel(${r.id})">🗑</button>`}
+      </td>
+    </tr>`).join('') + '</table>';
 }
 
 /* ---------------- Account statement: WhatsApp copy + PDFs (module) ---------------- */
