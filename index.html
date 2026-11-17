@@ -181,6 +181,11 @@
   body.jobdone [onclick^="deleteLabourEntry"], body.jobdone [onclick^="deleteLabourFromDetail"], body.jobdone [onclick^="clEdit"], body.jobdone [onclick^="clDel"],
   body.jobdone [onclick^="mtEdit"], body.jobdone [onclick^="mtDel"], body.jobdone [onclick^="mtAddTo"], body.jobdone [onclick^="awEdit"], body.jobdone [onclick^="awDel"],
   body.jobdone [onclick^="mpEdit"], body.jobdone [onclick^="mpDel"], body.viewonly [onclick^="cmpComplete"], body.viewonly [onclick^="cmpReopen"]{display:none !important;}
+  .sv-tabs{display:flex;gap:6px;margin:8px 0;}
+  .sv-tab{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;font-size:.78rem;color:var(--teal-dark);cursor:pointer;font-family:inherit;}
+  .sv-tab.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .sv-search{display:flex;gap:6px;align-items:center;}
+  .sv-search input{flex:1;}
   .tf{position:relative;}
   .tf-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1.5px solid var(--teal);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:190px;overflow-y:auto;margin-top:2px;}
   .tf-item{padding:10px 12px;font-size:.92rem;cursor:pointer;border-bottom:1px solid var(--line);}
@@ -409,6 +414,14 @@
 
   <!-- ===================== SAVED QUOTATIONS VIEW ===================== -->
   <div class="view" id="view-saved">
+    <div class="card" id="savedHead">
+      <h3>Saved Quotations</h3>
+      <div class="sv-tabs" id="svTabs"></div>
+      <div class="sv-search">
+        <input type="text" id="svSearch" placeholder="🔍 Name, phone or street" oninput="svSearchInput()" autocomplete="off">
+        <button class="btn btn-ghost btn-sm" onclick="svSearchClear()">✕</button>
+      </div>
+    </div>
     <div class="card" id="savedList"></div>
   </div>
 
@@ -1682,8 +1695,24 @@ function closeViewer(){
 }
 
 /* ---------------- Saved list ---------------- */
+/* ---------------- Saved screen tabs + search (module) ---------------- */
+let svTab = (function(){ try{ const v = localStorage.getItem('bs_savedtab'); return (v==='fin'||v==='done') ? v : 'quotes'; }catch(e){ return 'quotes'; } })();
+let svQuery = '';
+function svSetTab(t){ svTab = t; try{ localStorage.setItem('bs_savedtab', t); }catch(e){} renderSavedList(); }
+function svSearchInput(){ svQuery = document.getElementById('svSearch').value; renderSavedList(); }
+function svSearchClear(){ svQuery = ''; document.getElementById('svSearch').value = ''; renderSavedList(); }
+function svTabOf(u){ return !u.finAt ? 'quotes' : ((u.shown[0] && u.shown[0].completedAt) ? 'done' : 'fin'); }
+function svMatch(u){                      // name, phone or street (address); any quotation of the customer
+  const qy = svQuery.trim().toLowerCase(); if(!qy) return true;
+  const qd2 = qy.replace(/\D/g,'');
+  return u.all.some(q=>{
+    if([q.custName, q.custAddress, q.custContact].some(v=>String(v||'').toLowerCase().includes(qy))) return true;
+    return qd2.length>=3 && String(q.custContact||'').replace(/\D/g,'').includes(qd2);
+  });
+}
 function renderSavedList(){
   const el = document.getElementById('savedList');
+  document.getElementById('savedHead').style.display = quotes.length ? '' : 'none';
   if(quotes.length===0){
     el.innerHTML = `<div class="empty"><div class="big">🗒️</div>No saved quotations yet.<br>Create one from the "New Quote" tab.</div>`;
     if(pickKey) closePicker();
@@ -1693,6 +1722,11 @@ function renderSavedList(){
   const units = savedUnits();
   const fin = units.filter(u=>u.finAt).sort((a,b)=>a.finAt-b.finAt);
   const drafts = units.filter(u=>!u.finAt).sort((a,b)=>b.last-a.last);
+  const numOf = new Map(fin.map((u,i)=>[u.key, i+1]));            // Finalized #n stays the same in every tab
+  const counts = {quotes:0, fin:0, done:0};
+  units.forEach(u=>{ if(svMatch(u)) counts[svTabOf(u)]++; });
+  document.getElementById('svTabs').innerHTML = [['quotes','Quotations'],['fin','Finalised'],['done','Completed']].map(([k,l])=>
+    `<button class="sv-tab ${svTab===k?'active':''}" onclick="svSetTab('${k}')">${l} (${counts[k]})</button>`).join('');
   const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const brand = q => (q.paintBrand && q.paintBrand.company) ? ' · '+esc(q.paintBrand.company) : '';
   const doneTag = q => q && q.completedAt ? `<span class="fin-tag" style="background:#d8eee5;color:#17674c;">✔ Completed ${formatDate(q.completedAt)}</span>` : '';
@@ -1703,12 +1737,12 @@ function renderSavedList(){
       <div>
         <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}${doneTag(q)}</div>
         <div class="meta">${qd(q)} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
-        <label class="fin-row"><input type="checkbox" ${q.finalizedAt?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
+        ${q.completedAt ? '' : `<label class="fin-row"><input type="checkbox" ${q.finalizedAt?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>`}
       </div>
       <div class="actions">
         <button class="btn btn-outline btn-sm" onclick="viewQuote(${q.id})">View</button>
-        <button class="btn btn-outline btn-sm" onclick="editQuote(${q.id})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id})">Del</button>
+        ${q.completedAt ? '' : `<button class="btn btn-outline btn-sm" onclick="editQuote(${q.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQuote(${q.id})">Del</button>`}
         ${labBtn(q)}
       </div>
     </div>`; };
@@ -1726,13 +1760,15 @@ function renderSavedList(){
       </div>
       <div class="actions">
         <button class="btn btn-outline btn-sm" onclick="pickView('${u.key}')">View</button>
-        <button class="btn btn-outline btn-sm" onclick="pickEdit('${u.key}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="pickDel('${u.key}')">Del</button>
+        ${(f && f.completedAt) ? '' : `<button class="btn btn-outline btn-sm" onclick="pickEdit('${u.key}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="pickDel('${u.key}')">Del</button>`}
         ${labBtn(f)}
       </div>
     </div>`; };
   const unitHtml = (u, n) => u.multi ? multi(u, n) : single(u, n);
-  el.innerHTML = '<h3>Saved Quotations</h3>' + fin.map((u,i)=>unitHtml(u,i+1)).join('') + drafts.map(u=>unitHtml(u,0)).join('');
+  const shownUnits = (svTab==='quotes' ? drafts : fin.filter(u=>svTabOf(u)===svTab)).filter(svMatch);
+  el.innerHTML = shownUnits.length ? shownUnits.map(u=>unitHtml(u, numOf.get(u.key)||0)).join('')
+    : `<div class="empty" style="padding:14px;">${svQuery.trim() ? 'No match in this tab.' : (svTab==='quotes' ? 'No pending quotations.' : svTab==='fin' ? 'No running (finalised) jobs.' : 'No completed jobs yet.')}</div>`;
   if(pickKey) pickRefresh();
 }
 
@@ -1750,6 +1786,7 @@ function toggleFinalized(id, on){
   if(!q) return;
   if(on){
     q.finalizedAt = Date.now();
+    toast('Moved to Finalised');
   } else {
     if(q.completedAt){ toast('Reopen the job first'); renderSavedList(); return; }
     if(quoteHasEntries(id)){
@@ -1758,6 +1795,7 @@ function toggleFinalized(id, on){
       return;
     }
     delete q.finalizedAt;
+    toast('Moved to Quotations');
   }
   saveQuotes(quotes);
   renderSavedList();
