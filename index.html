@@ -174,6 +174,13 @@
   #accFocusHead{display:none;}
   #view-labour.acc-focus #accFocusHead{display:block;}
   #view-labour.acc-focus .acc-line, #view-labour.acc-focus #labTopCard, #view-labour.acc-focus #labBottomClose{display:none;}
+  body.jobdone #labourFormCard, body.jobdone #lbBox-rec .row2, body.jobdone #lbBox-rec .field, body.jobdone #lbBox-rec .footer-actions,
+  body.jobdone #lbBox-mat .row2, body.jobdone #lbBox-mat .field, body.jobdone #lbBox-mat .footer-actions,
+  body.jobdone #clFormCard, body.jobdone #mtFormCard, body.jobdone #mpFormCard, body.jobdone #awForm,
+  body.jobdone [onclick^="lbEdit"], body.jobdone [onclick^="lbDel"], body.jobdone [onclick^="editLabourEntry"], body.jobdone [onclick^="editLabourFromDetail"],
+  body.jobdone [onclick^="deleteLabourEntry"], body.jobdone [onclick^="deleteLabourFromDetail"], body.jobdone [onclick^="clEdit"], body.jobdone [onclick^="clDel"],
+  body.jobdone [onclick^="mtEdit"], body.jobdone [onclick^="mtDel"], body.jobdone [onclick^="mtAddTo"], body.jobdone [onclick^="awEdit"], body.jobdone [onclick^="awDel"],
+  body.jobdone [onclick^="mpEdit"], body.jobdone [onclick^="mpDel"], body.viewonly [onclick^="cmpComplete"], body.viewonly [onclick^="cmpReopen"]{display:none !important;}
   .tf{position:relative;}
   .tf-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1.5px solid var(--teal);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:190px;overflow-y:auto;margin-top:2px;}
   .tf-item{padding:10px 12px;font-size:.92rem;cursor:pointer;border-bottom:1px solid var(--line);}
@@ -475,6 +482,12 @@
     <div class="acc-body" id="accB-add">
     <div class="card" id="awBox"></div>
     <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('add')">✕ Close</button>
+    </div>
+
+    <div class="acc-line" id="accL-cmp" onclick="accToggle('cmp')"><span>✔ Complete</span><span class="acc-val" id="accV-cmp"></span><span class="acc-arr" id="accA-cmp">▸</span></div>
+    <div class="acc-body" id="accB-cmp">
+    <div class="card" id="cmpBox"></div>
+    <button class="btn btn-outline btn-block no-print" style="margin-bottom:8px;" onclick="accToggle('cmp')">✕ Close</button>
     </div>
 
     <div class="acc-line" id="accL-rep" onclick="accToggle('rep')"><span>📄 Reports (WhatsApp / PDF)</span><span class="acc-val" id="accV-rep"></span><span class="acc-arr" id="accA-rep">▸</span></div>
@@ -842,6 +855,7 @@ function toast(msg){
 
 /* ---------------- Tabs / views ---------------- */
 function switchTab(name){
+  document.body.classList.remove('jobdone');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   if(name==='new') document.getElementById('view-new').classList.add('active');
@@ -1681,12 +1695,13 @@ function renderSavedList(){
   const drafts = units.filter(u=>!u.finAt).sort((a,b)=>b.last-a.last);
   const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const brand = q => (q.paintBrand && q.paintBrand.company) ? ' · '+esc(q.paintBrand.company) : '';
+  const doneTag = q => q && q.completedAt ? `<span class="fin-tag" style="background:#d8eee5;color:#17674c;">✔ Completed ${formatDate(q.completedAt)}</span>` : '';
   const labBtn = q => q && q.finalizedAt ? `<button class="btn btn-ochre btn-sm" onclick="openLabourForQuote(${q.id})">Labour</button>` : '';
   /* single quotation: View / Edit / Del work directly */
   const single = (u, n) => { const q = u.all[0]; return `
     <div class="quote-item ${n?'fin':''}">
       <div>
-        <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
+        <div class="who">${esc(q.custName)}${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}${doneTag(q)}</div>
         <div class="meta">${qd(q)} · <span class="chip">₹${q.netAmount.toFixed(2)}</span></div>
         <label class="fin-row"><input type="checkbox" ${q.finalizedAt?'checked':''} onchange="toggleFinalized(${q.id}, this.checked)"> Finalized (customer accepted)</label>
       </div>
@@ -1706,7 +1721,7 @@ function renderSavedList(){
     return `
     <div class="quote-item ${n?'fin':''}">
       <div>
-        <div class="who">${esc(u.all[0].custName)}<span class="cnt">(${u.all.length})</span>${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}</div>
+        <div class="who">${esc(u.all[0].custName)}<span class="cnt">(${u.all.length})</span>${n?`<span class="fin-tag">✓ Finalized #${n}</span>`:''}${doneTag(f)}</div>
         <div class="meta">${meta}</div>
       </div>
       <div class="actions">
@@ -1736,6 +1751,7 @@ function toggleFinalized(id, on){
   if(on){
     q.finalizedAt = Date.now();
   } else {
+    if(q.completedAt){ toast('Reopen the job first'); renderSavedList(); return; }
     if(quoteHasEntries(id)){
       toast('Cannot un-finalize: this quotation has labour / received / materials entries');
       renderSavedList();
@@ -1944,7 +1960,8 @@ function openLabourForQuote(quoteId){
   const q = quotes.find(x=>x.id===quoteId);
   if(!q){ toast('Quotation not found'); return; }
   currentLabourQuoteId = quoteId;
-  document.getElementById('labourCustName').textContent = q.custName + ' — ' + qd(q) + ' — ₹' + q.netAmount.toFixed(2);
+  labTitleRefresh();
+  applyJobLock();
   resetLabourForm();
   lbReset('rec'); lbReset('mat');
   renderLabourList();
@@ -2297,12 +2314,17 @@ function lbInit(){
         ${c.hasBill ? `<div class="field"><label>Bill Number</label><input type="text" id="${p}-bill"></div>` : ''}
       </div>
       <div class="row2">
-        <div class="field"><label>${c.amtLabel} (₹)</label><input type="number" id="${p}-amount" placeholder="0"></div>
+        <div class="field"><label>${c.amtLabel} (₹)</label><input type="number" id="${p}-amount" placeholder="0" ${c.hasBill ? '' : 'oninput="recLive()"'}></div>
         ${c.hasBill
           ? `<div class="field"><label class="paid-tick"><input type="checkbox" id="${p}-paid" onchange="lbPaidToggle()"> Paid</label></div>`
           : `<div class="field"><label>Type</label><select id="${p}-type"><option>Cash</option><option>UPI</option><option>Bank</option></select></div>`}
       </div>
       ${c.hasBill ? `<div class="field" id="${p}-typebox" style="display:none;"><label>Paid by</label><select id="${p}-type"><option>Cash</option><option>UPI</option><option>Bank</option></select></div>` : ''}
+      ${c.hasBill ? '' : `<div class="row2">
+        <div class="field"><label>Discount (₹)</label><input type="number" id="${p}-disc" placeholder="0" inputmode="decimal" step="any" oninput="recLive()"></div>
+        <div class="field"><label class="paid-tick"><input type="checkbox" id="${p}-close" onchange="recLive()"> Close with discount</label></div>
+      </div>
+      <div class="field"><div class="sqft-badge" id="${p}-after" style="display:inline-block;">Balance after: -</div></div>`}
       <div class="field"><label>Note</label><input type="text" id="${p}-note"></div>
       <div class="footer-actions">
         <button class="btn btn-teal" onclick="lbSave('${kind}')">💾 Save Entry</button>
@@ -2324,6 +2346,7 @@ function lbReset(kind){
   document.getElementById(p+'-type').value = 'Cash';
   document.getElementById(p+'-note').value = '';
   if(LB[kind].hasBill){ document.getElementById(p+'-bill').value = ''; document.getElementById(p+'-paid').checked = false; lbPaidToggle(); }
+  if(kind==='rec'){ document.getElementById('lb-rec-disc').value = ''; document.getElementById('lb-rec-disc').readOnly = false; document.getElementById('lb-rec-close').checked = false; recLive(); }
   document.getElementById(p+'-title').textContent = LB[kind].title;
   document.getElementById(p+'-cancel').style.display = 'none';
 }
@@ -2337,7 +2360,8 @@ function lbSave(kind, ok){
   const date = dpCheck(p+'-date', ok ? true : ()=>lbSave(kind, true));
   const amount = parseFloat(document.getElementById(p+'-amount').value)||0;
   if(!date) return;
-  if(amount<=0){ toast('Enter the amount'); return; }
+  const disc = kind==='rec' ? (parseFloat(document.getElementById('lb-rec-disc').value)||0) : 0;
+  if(amount<=0 && !(kind==='rec' && disc>0)){ toast('Enter the amount'); return; }
   const entry = {
     id: lbEditing[kind] || Date.now(), quoteId: currentLabourQuoteId, date, amount,
     type: (c.hasBill && !document.getElementById(p+'-paid').checked) ? '' : document.getElementById(p+'-type').value,
@@ -2345,6 +2369,7 @@ function lbSave(kind, ok){
     bill: c.hasBill ? document.getElementById(p+'-bill').value.trim() : ''
   };
   if(c.hasBill) entry.paid = document.getElementById(p+'-paid').checked;
+  if(kind==='rec') entry.discount = Math.round(disc*100)/100;
   if(lbEditing[kind]) c.data = c.data.map(e=>e.id===lbEditing[kind] ? entry : e);
   else c.data.push(entry);
   lbSaveAll(kind);
@@ -2365,6 +2390,7 @@ function lbEdit(kind, id){
   document.getElementById(p+'-type').value = e.type || 'Cash';
   document.getElementById(p+'-note').value = e.note||'';
   if(LB[kind].hasBill){ document.getElementById(p+'-bill').value = e.bill||''; document.getElementById(p+'-paid').checked = (e.paid!==false); lbPaidToggle(); }
+  if(kind==='rec'){ document.getElementById('lb-rec-disc').value = e.discount || ''; document.getElementById('lb-rec-disc').readOnly = false; document.getElementById('lb-rec-close').checked = false; recLive(); }
   document.getElementById(p+'-title').textContent = 'Edit '+LB[kind].title+' Entry';
   document.getElementById(p+'-cancel').style.display = 'inline-block';
   document.getElementById('lbBox-'+kind).scrollIntoView({behavior:'smooth'});
@@ -2384,7 +2410,7 @@ function lbRenderRecLine(){               // Cash Received shows one summary lin
   const list = lbScoped('rec'), total = list.reduce((t,e)=>t+e.amount,0);
   el.innerHTML = list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' :
     `<div class="quote-item" style="cursor:pointer;" onclick="openRecView()">
-       <div><div class="who">💰 Received (${list.length})</div><div class="meta">Balance to receive ₹${(q ? q.netAmount + awTotal(q.id) - total : 0).toFixed(2)}</div></div>
+       <div><div class="who">💰 Received (${list.length})</div><div class="meta">Balance to receive ₹${(q ? custBalance(q) : 0).toFixed(2)}</div></div>
        <div style="font-weight:700;white-space:nowrap;">₹${total.toFixed(2)} ▸</div>
      </div>`;
   recRender();
@@ -2408,15 +2434,15 @@ function recRender(){
   el.innerHTML = '<h3>Received <span class="cnt">('+list.length+')</span></h3>' + (list.length===0 ? '<div class="empty" style="padding:8px;">No entries yet.</div>' : list.map(e=>`
       <div class="quote-item">
         <div>
-          <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.amount.toFixed(2)}</span></div>
-          <div class="meta">${escH(e.type||'')}${e.note?' · '+escH(e.note):''}</div>
+          <div class="who">${formatDate(e.date)} · <span class="chip">₹${e.amount.toFixed(2)}</span>${e.discount>0 ? ' · Discount ₹'+e.discount.toFixed(2) : ''}</div>
+          <div class="meta">${e.amount>0 ? escH(e.type||'') : 'Discount only'}${e.note?' · '+escH(e.note):''}</div>
         </div>
         <div class="actions">
           <button class="btn btn-outline btn-sm" onclick="lbEdit('rec',${e.id})">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="lbDel('rec',${e.id})">Del</button>
         </div>
       </div>`).join('')) +
-    `<div class="sum-row big"><span>Total Received</span><span>₹${total.toFixed(2)}</span></div><div class="sum-row"><span>Balance to receive</span><span>₹${(q ? q.netAmount + awTotal(q.id) - total : 0).toFixed(2)}</span></div>`;
+    `<div class="sum-row big"><span>Total Received</span><span>₹${total.toFixed(2)}</span></div>${recDiscTotal(currentLabourQuoteId)>0 ? '<div class="sum-row"><span>Discount</span><span>₹'+recDiscTotal(currentLabourQuoteId).toFixed(2)+'</span></div>' : ''}<div class="sum-row"><span>Balance to receive</span><span>₹${(q ? custBalance(q) : 0).toFixed(2)}</span></div>`;
 }
 function lbRenderMatLine(){               // Materials Used shows one summary line; tap it for the bills
   const el = document.getElementById('lb-mat-list');
@@ -2484,19 +2510,20 @@ function renderLabourSummary(){
   const sum = a => a.reduce((s,e)=>s+e.amount,0);
   const rec = sum(lbScoped('rec')), mc = matCalc(currentLabourQuoteId);
   const lab = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId).reduce((s,e)=>s+e.total,0);
-  const aw = awTotal(currentLabourQuoteId);
-  const bal = q.netAmount + aw - rec, net = rec - lab - mc.paid;
+  const aw = awTotal(currentLabourQuoteId), dsc = recDiscTotal(currentLabourQuoteId);
+  const bal = q.netAmount + aw - dsc - rec, net = rec - lab - mc.paid;
   const row = (l,v,cls) => `<div class="sum-row ${cls||''}"><span>${l}</span><span>₹${v.toFixed(2)}</span></div>`;
-  el.innerHTML = '<h3>Account Summary</h3>' + row('Quotation amount', q.netAmount) + (aw>0 ? row('Additional works', aw) + row('Total amount', q.netAmount + aw) : '') + row('Received so far', rec) +
+  el.innerHTML = '<h3>Account Summary</h3>' + row('Quotation amount', q.netAmount) + (aw>0 ? row('Additional works', aw) + row('Total amount', q.netAmount + aw) : '') + (dsc>0 ? row('Discount', dsc) : '') + row('Received so far', rec) +
     row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) + row('Materials paid', mc.paid) +
     (mc.disc>0 ? row('Materials discount', mc.disc) : '') + row('Materials unpaid', mc.unpaid) +
     row('Net (received − labour − materials paid)', net, 'big');
   accRefresh(lab, bal, mc.unpaid, rec, aw, rec - (lab + mc.bills));   // reminder only: received - (labour + all material bills)
+  cmpRender();
 }
 
 /* ---------------- Labour screen accordion (module): one line each, one open at a time ---------------- */
-const ACC_KEYS = ['sum','lab','rec','mat','add','rep'];
-const ACC_TITLES = { sum:'📊 Account Summary', lab:'👷 Labour Entry', rec:'💰 Cash Received', mat:'🧱 Materials Used', add:'➕ Additional Works', rep:'📄 Reports' };
+const ACC_KEYS = ['sum','lab','rec','mat','add','cmp','rep'];
+const ACC_TITLES = { sum:'📊 Account Summary', lab:'👷 Labour Entry', rec:'💰 Cash Received', mat:'🧱 Materials Used', add:'➕ Additional Works', cmp:'✔ Complete', rep:'📄 Reports' };
 function accSet(key, on){
   document.getElementById('accB-'+key).classList.toggle('open', on);
   document.getElementById('accL-'+key).classList.toggle('open', on);
@@ -3277,6 +3304,74 @@ function awListRender(){
 }
 awInit();
 
+/* ---------------- Customer discount + Complete module ---------------- */
+function recDiscTotal(qid){ return Math.round(LB.rec.data.filter(e=>e.quoteId===qid).reduce((t,e)=>t+(e.discount||0),0)*100)/100; }
+function recAmtTotal(qid){ return Math.round(LB.rec.data.filter(e=>e.quoteId===qid).reduce((t,e)=>t+e.amount,0)*100)/100; }
+function custBalance(q){ return Math.round((q.netAmount + awTotal(q.id) - recDiscTotal(q.id) - recAmtTotal(q.id))*100)/100; }
+function recBefore(){                     // balance to receive before the entry being typed (ignores the one being edited)
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return 0;
+  const self = lbEditing.rec ? LB.rec.data.find(e=>e.id===lbEditing.rec) : null;
+  return Math.round((custBalance(q) + (self ? self.amount + (self.discount||0) : 0))*100)/100;
+}
+function recLive(){
+  const out = document.getElementById('lb-rec-after'), discEl = document.getElementById('lb-rec-disc');
+  if(!out || !discEl) return;
+  const before = recBefore(), amt = parseFloat(document.getElementById('lb-rec-amount').value)||0;
+  if(document.getElementById('lb-rec-close').checked){ discEl.value = Math.max(0, Math.round((before-amt)*100)/100) || ''; discEl.readOnly = true; } else discEl.readOnly = false;
+  const after = Math.round((before - amt - (parseFloat(discEl.value)||0))*100)/100;
+  out.textContent = 'Balance after: ₹' + after.toFixed(2);
+}
+function labTitleRefresh(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  document.getElementById('labourCustName').textContent = q.custName + ' — ' + qd(q) + ' — ₹' + q.netAmount.toFixed(2) + (q.completedAt ? ' — ✔ Completed ' + formatDate(q.completedAt) : '');
+}
+function applyJobLock(){                  // a completed job is locked (view only) until it is reopened
+  const q = quotes.find(x=>x.id===currentLabourQuoteId);
+  document.body.classList.toggle('jobdone', !!(q && q.completedAt));
+}
+function cmpCalc(q){
+  const aw = awTotal(q.id), dsc = recDiscTotal(q.id), rec = recAmtTotal(q.id), mc = matCalc(q.id);
+  const lab = labourEntries.filter(e=>e.quoteId===q.id).reduce((t,e)=>t+e.total,0);
+  const total = Math.round((q.netAmount + aw)*100)/100, matNet = Math.round((mc.bills - mc.disc)*100)/100;
+  return { total, dsc, rec, custBal: Math.round((total - dsc - rec)*100)/100, bills: mc.bills, mdsc: mc.disc, mpaid: mc.paid, matBal: mc.unpaid,
+           lab, matNet, profit: Math.round((rec - lab - matNet)*100)/100 };
+}
+function cmpRender(){
+  const box = document.getElementById('cmpBox'); if(!box) return;
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  const c = cmpCalc(q), m = n => '₹' + n.toFixed(2);
+  const ok = c.custBal===0 && c.matBal===0;
+  const row = (l,v,cls) => `<div class="sum-row ${cls||''}"><span>${l}</span><span>${v}</span></div>`;
+  const mark = (bal) => bal===0 ? `<span style="color:#17674c;">${m(bal)} ✔</span>` : `<span style="color:#b3321f;">${m(bal)} ✖</span>`;
+  let btn;
+  if(q.completedAt) btn = `<div style="text-align:center;font-weight:700;color:#17674c;margin:10px 0;">✔ Completed on ${formatDate(q.completedAt)}</div><button class="btn btn-outline btn-block" onclick="cmpReopen()">↺ Reopen</button>`;
+  else if(ok) btn = `<button class="btn btn-teal btn-block" style="margin-top:10px;" onclick="cmpComplete()">✔ Complete this job</button>`;
+  else btn = `<div class="empty" style="padding:8px;">Tally both balances to complete this job.</div>`;
+  box.innerHTML = `<h3>Complete</h3>
+    <div style="font-weight:700;margin:6px 0 2px;">Customer</div>
+    ${row('Total amount', m(c.total))}${row('− Discount', m(c.dsc))}${row('− Received', m(c.rec))}${row('= Balance', mark(c.custBal), 'big')}
+    <div style="font-weight:700;margin:12px 0 2px;">Materials</div>
+    ${row('Bills', m(c.bills))}${row('− Discount', m(c.mdsc))}${row('− Paid', m(c.mpaid))}${row('= Balance', mark(c.matBal), 'big')}
+    <div style="font-weight:700;margin:12px 0 2px;">${c.profit<0 ? 'Loss' : 'Profit'} <span style="font-weight:400;font-size:.8rem;">(Received − Labour − Material net)</span></div>
+    ${row(c.profit<0 ? 'Loss' : 'Profit', (c.profit<0?'-':'') + m(Math.abs(c.profit)), 'big')}
+    ${btn}`;
+  const v = document.getElementById('accV-cmp');
+  if(v){ v.textContent = q.completedAt ? 'Completed ✔' : (ok ? 'Ready' : 'Pending'); v.className = 'acc-val ' + ((q.completedAt || ok) ? 'green' : 'red'); }
+}
+function cmpComplete(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  const c = cmpCalc(q); if(c.custBal!==0 || c.matBal!==0){ toast('Tally both balances first'); return; }
+  cfm('Complete this job? The entries will be locked. You can reopen it later.', ()=>{
+    q.completedAt = todayStr(); saveQuotes(quotes); applyJobLock(); labTitleRefresh(); cmpRender(); toast('Job completed');
+  }, 'Complete', 'Complete job');
+}
+function cmpReopen(){
+  const q = quotes.find(x=>x.id===currentLabourQuoteId); if(!q) return;
+  cfm('Reopen this job? The entries will be unlocked.', ()=>{
+    delete q.completedAt; saveQuotes(quotes); applyJobLock(); labTitleRefresh(); cmpRender(); toast('Job reopened');
+  }, 'Reopen', 'Reopen job');
+}
+
 /* ---------------- Account statement: WhatsApp copy + PDFs (module) ---------------- */
 function acctData(){
   const q = quotes.find(x=>x.id===currentLabourQuoteId);
@@ -3287,8 +3382,8 @@ function acctData(){
   const sum = (a,f)=> a.reduce((t,e)=>t+f(e),0);
   const mc = matCalc(currentLabourQuoteId), mp = mpTimeline(currentLabourQuoteId);
   const aw = awScoped().sort(asc), awT = sum(aw,e=>e.amount);
-  const recT = sum(rec,e=>e.amount), matT = mc.paid, labT = sum(lab,e=>e.total);
-  return {q, rec, mat, lab, mc, mp, aw, awT, recT, matT, labT, bal:q.netAmount+awT-recT, net:recT-labT-matT};
+  const recT = sum(rec,e=>e.amount), matT = mc.paid, labT = sum(lab,e=>e.total), dsc = sum(rec,e=>e.discount||0);
+  return {q, rec, recPaid:rec.filter(e=>e.amount>0), mat, lab, mc, mp, aw, awT, dsc, recT, matT, labT, bal:q.netAmount+awT-dsc-recT, net:recT-labT-matT};
 }
 function customerStatementText(){
   const d = acctData();
@@ -3299,9 +3394,10 @@ function customerStatementText(){
     d.aw.forEach(e=>L.push(e.kind==='lump' ? e.name+' - Rs.'+e.amount.toFixed(2) : e.name+' - '+awDesc(e,true)+' = Rs.'+e.amount.toFixed(2)));
     L.push('Additional Works Total: Rs.'+d.awT.toFixed(2), '', 'Total amount: Rs.'+(d.q.netAmount+d.awT).toFixed(2), '');
   }
-  if(d.rec.length){
+  if(d.dsc>0) L.push('Discount: Rs.'+d.dsc.toFixed(2), '');
+  if(d.recPaid.length){
     L.push('*Received:*');
-    d.rec.forEach(e=>L.push(formatDate(e.date)+' Rs.'+e.amount.toFixed(2)+' ('+e.type+')'));
+    d.recPaid.forEach(e=>L.push(formatDate(e.date)+' Rs.'+e.amount.toFixed(2)+' ('+e.type+')'));
     L.push('', 'Total Received: Rs.'+d.recT.toFixed(2), '');
   }
   L.push('*Balance to receive: Rs.'+d.bal.toFixed(2)+'*');
@@ -3356,12 +3452,13 @@ function acctPdf(mode){
   if(!full){
     line('Quotation amount', d.q.netAmount);
     if(d.awT>0){ line('Additional works', d.awT); line('Total amount', d.q.netAmount+d.awT); }
+    if(d.dsc>0) line('Discount', d.dsc);
     line('Received so far', d.recT);
     line('Balance to receive', d.bal, true);
     table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
       d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
     table('Cash Received', ['Date','Amount','Type'], [mx, mx+90, mx+180],
-      d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type]));
+      d.recPaid.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type]));
   } else {
     // every section ends with its own total, then one blank line
     const total = (label, val) => {
@@ -3371,9 +3468,9 @@ function acctPdf(mode){
     table('Additional Works', ['Date','Work','Sqft x Rate','Amount'], [mx, mx+90, mx+280, mx+400],
       d.aw.map(e=>[formatDate(e.date), e.name, awDesc(e,true), 'Rs.'+e.amount.toFixed(2)]));
     if(d.aw.length) total('Additional Works Total', d.awT);
-    table('Cash Received', ['Date','Amount','Type','Note'], [mx, mx+90, mx+180, mx+250],
-      d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), e.type, e.note||'']));
-    if(d.rec.length) total('Total Received', d.recT);
+    table('Cash Received', ['Date','Amount','Discount','Type','Note'], [mx, mx+80, mx+160, mx+235, mx+295],
+      d.rec.map(e=>[formatDate(e.date), 'Rs.'+e.amount.toFixed(2), 'Rs.'+(e.discount||0).toFixed(2), e.type, e.note||'']));
+    if(d.rec.length){ total('Total Received', d.recT); if(d.dsc>0) total('Discount', d.dsc); }
     table('Labour', ['Date','No. of Labour','Rate','Misc','Total'], [mx, mx+90, mx+180, mx+260, mx+350],
       d.lab.map(e=>[formatDate(e.date), e.nos, 'Rs.'+e.rate, 'Rs.'+e.misc.toFixed(2), 'Rs.'+e.total.toFixed(2)]));
     if(d.lab.length){                       // Labour Total row: total No. of Labour under its column, amount on the right
@@ -3395,6 +3492,7 @@ function acctPdf(mode){
     doc.setLineWidth(0.8); doc.line(mx, y, 555, y); y += 16;
     line('Quotation amount', d.q.netAmount);
     if(d.awT>0){ line('Additional work', d.awT); line('Total', d.q.netAmount+d.awT); }
+    if(d.dsc>0) line('Less: Discount', d.dsc);
     y += 8;
     line('Amount received', d.recT);
     line('Labour', d.labT);
