@@ -695,14 +695,24 @@
         <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;margin:0;">Wastage <input type="number" id="cvWaste" inputmode="decimal" step="any" oninput="cvWasteChange()" style="width:64px;padding:6px 8px;"> %</label>
       </div>
       <p style="font-size:.78rem;color:#6b6558;margin:0 0 8px;">Litres = Sqft × Coats ÷ Coverage per litre × (1 + wastage)</p>
-      <div id="cvList"></div>
-      <button class="btn btn-ochre btn-sm" style="margin-top:10px;" onclick="cvOpenForm()">+ Add</button>
+      <div id="cvSumLine"></div>
     </div>
     <div class="card">
       <h3>Litres required</h3>
       <div class="field"><label>🔍 Customer</label><div class="tf"><input type="text" id="cvQuote" placeholder="Type customer name…" autocomplete="off"></div></div>
       <div id="cvEst"></div>
     </div>
+    <button class="btn btn-outline btn-block no-print" onclick="switchTab('saved')">✕ Close</button>
+  </div>
+
+  <!-- ===================== COVERAGE RECORDS LIST VIEW ===================== -->
+  <div class="view" id="view-cvlist">
+    <div class="card">
+      <h3>📋 Coverage Records</h3>
+      <div id="cvList"></div>
+      <button class="btn btn-ochre btn-sm" style="margin-top:10px;" onclick="cvOpenForm()">+ Add</button>
+    </div>
+    <button class="btn btn-outline btn-block no-print" onclick="cvCloseList()">✕ Close</button>
   </div>
 
   <div class="view" id="view-settings">
@@ -3568,7 +3578,15 @@ function cvDelDo(id){
   cvEstRender();
   toast('Deleted');
 }
+function cvSumRender(){
+  document.getElementById('cvSumLine').innerHTML = `<div class="quote-item" style="cursor:pointer;" onclick="cvOpenList()">
+    <div><div class="who">📋 Coverage Records (${CV.data.length})</div></div>
+    <div style="font-weight:700;white-space:nowrap;">▸</div></div>`;
+}
+function cvOpenList(){ cvListRender(); showOnly('view-cvlist'); window.scrollTo(0,0); }
+function cvCloseList(){ cvCloseForm(); showOnly('view-coverage'); cvRender(); window.scrollTo(0,0); }
 function cvListRender(){
+  cvSumRender();
   document.getElementById('cvList').innerHTML = `<table class="cv-table">
     <tr><th>Type of work</th><th class="num">Cov/ltr</th><th class="num">Coats</th><th></th></tr>` + CV.data.map(r=>`
     <tr>
