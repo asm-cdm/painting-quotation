@@ -1004,7 +1004,7 @@ function deleteAllDataDo(){
   profile = null;
   quotes = [];
   labourEntries = [];
-  LB.rec.data = []; LB.mat.data = []; CL.data = []; MT.data = []; MP.data = []; AW.data = []; CV.data = [cvDefault()]; CV.waste = 10; try{ localStorage.removeItem('bs_cvseed2'); }catch(e){} cvSeedStarters();
+  LB.rec.data = []; LB.mat.data = []; CL.data = []; MT.data = []; MP.data = []; AW.data = []; CV.data = [cvDefault()]; CV.waste = 10; try{ localStorage.removeItem('bs_cvseed2'); localStorage.removeItem('bs_cvseed3'); }catch(e){} cvSeedStarters(); cvSeedPutty();
   document.querySelector('.tabs').style.display='none';
   showOnly('view-setup');
   toast('All data deleted');
@@ -1545,15 +1545,34 @@ function buildWhatsappText(){
   return lines.join('\n');
 }
 
+/* ---------------- Copy helper (module): works even where the browser blocks the clipboard ---------------- */
+function copyText(text){
+  const ok = () => toast('Copied! Paste it in WhatsApp');
+  const legacy = () => {
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+      const done = document.execCommand('copy'); document.body.removeChild(ta);
+      if(done){ ok(); return; }
+    }catch(e){}
+    copyBox(text);
+  };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){ navigator.clipboard.writeText(text).then(ok).catch(legacy); return; }
+  }catch(e){}
+  legacy();
+}
+function copyBox(text){                   // last resort: show the text so it can be selected and copied by hand
+  const d = document.createElement('div'); d.className = 'mbx'; d.style.zIndex = 130;
+  d.innerHTML = '<div class="mbx-card" style="width:100%;max-width:340px;"><h3>Copy this message</h3><p style="font-size:.82rem;">Press and hold the text, choose Select all, then Copy.</p><textarea id="copyBoxTxt" readonly rows="9" style="width:100%;font-size:.82rem;"></textarea><br><button class="btn btn-primary" id="copyBoxOk" style="margin-top:10px;">OK</button></div>';
+  document.body.appendChild(d);
+  const ta = d.querySelector('#copyBoxTxt'); ta.value = text; ta.focus(); ta.select();
+  d.querySelector('#copyBoxOk').onclick = () => d.remove();
+}
 function copyWhatsappText(){
   if(!currentPreviewQuote){ toast('No quotation to export'); return; }
-  const text = buildWhatsappText();
-  navigator.clipboard.writeText(text).then(()=>toast('Copied! Paste it in WhatsApp')).catch(()=>{
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    toast('Copied! Paste it in WhatsApp');
-  });
+  copyText(buildWhatsappText());
 }
 
 /* ---------------- Options / old versions (module) ----------------
@@ -2387,6 +2406,14 @@ function cvSeedStarters(){                // rough starting products; change the
   cvSaveAll();
 }
 cvSeedStarters();
+function cvSeedPutty(){                   // Putty is sold by weight: 12 sqft per Kg, 2 coats (change to your data sheet)
+  if(VIEW_ONLY) return;
+  try{ if(localStorage.getItem('bs_cvseed3')) return; }catch(e){}
+  if(!CV.data.some(r=>/putty/i.test(r.name))) CV.data.push({ id: Date.now()+9, name:'Putty', cov:12, coats:2, unit:'Kg' });
+  try{ localStorage.setItem('bs_cvseed3','1'); }catch(e){}
+  cvSaveAll();
+}
+cvSeedPutty();
 function lbSaveAll(kind){ if(VIEW_ONLY) return; localStorage.setItem(LB[kind].key, JSON.stringify(LB[kind].data)); }
 function quoteHasEntries(id){
   return labourEntries.some(e=>e.quoteId===id) || LB.rec.data.some(e=>e.quoteId===id) || LB.mat.data.some(e=>e.quoteId===id) || CL.data.some(e=>e.quoteId===id) || MT.data.some(e=>e.quoteId===id) || MP.data.some(e=>e.quoteId===id) || AW.data.some(e=>e.quoteId===id);
@@ -3460,7 +3487,7 @@ function cmpReopen(){
 }
 
 /* ---------------- Coverage module (CRUD master list + litres estimate from a quotation) ---------------- */
-let cvEditingId = null, cvQuoteId = null, cvRows = [];
+let cvEditingId = null, cvQuoteId = null, cvRows = [], cvBuyList = [];
 function cvNum(n){ return String(Math.round(n*100)/100); }
 function cvRender(){
   document.getElementById('cvWaste').value = CV.waste;
@@ -3479,13 +3506,13 @@ function cvRender(){
   cvListRender();
   cvEstRender();
 }
-function cvQuoteLabel(q){ return q.custName + ' — ' + qd(q) + ' — ₹' + Math.round(q.netAmount); }
+function cvQuoteLabel(q){ return q.custName + ' — ' + qd(q) + ' — ₹' + Math.round(q.netAmount) + ' — ' + (q.completedAt ? 'Completed' : q.finalizedAt ? 'Finalised' : 'Quotation'); }
 function cvFind(re){ return CV.data.find(r=>re.test(r.name)); }
 function cvDefaultsFor(label){            // which products a heading usually needs (matched by words in the heading name)
   const n = String(label||'').toLowerCase(), out = [];
   const add = r => { if(r && !out.includes(r.id)) out.push(r.id); };
   if(/polish/.test(n)){ add(cvFind(/polish/i)); return out; }
-  if(/interior|ceiling/.test(n)){ add(cvFind(/interior.*primer|primer.*interior/i)); add(cvFind(/emulsion/i)); }
+  if(/interior|ceiling/.test(n)){ add(cvFind(/putty/i)); add(cvFind(/interior.*primer|primer.*interior/i)); add(cvFind(/emulsion/i)); }
   if(/exterior/.test(n)){ add(cvFind(/exterior.*primer/i)); add(cvFind(/exterior.*emulsion/i) || cvFind(/emulsion/i)); }
   if(/enamel/.test(n)) add(cvFind(/enamel/i) || cvFind(/steel.*paint/i));
   if(/steel|grill|metal|gate/.test(n)){ add(cvFind(/steel.*primer/i)); add(cvFind(/steel.*paint/i)); }
@@ -3535,15 +3562,27 @@ function cvCalcAll(){
       ln.on = kk.checked; ln.coats = parseFloat(cc.value)||0;
       const rec = CV.data.find(x=>x.id===ln.recId);
       const lit = (ln.on && rec && rec.cov>0 && ln.coats>0 && r.sqft>0) ? Math.round(r.sqft * ln.coats / rec.cov * k * 100)/100 : 0;
-      out.textContent = lit>0 ? cvNum(lit) + ' Ltr' : '-';
+      out.textContent = lit>0 ? cvNum(lit) + ' ' + (rec.unit||'Ltr') : '-';
       if(lit>0){ if(!(ln.recId in byRec)){ byRec[ln.recId] = 0; order.push(ln.recId); } byRec[ln.recId] += lit; }
     });
   });
   const buy = document.getElementById('cvBuy'); if(!buy) return;
-  buy.innerHTML = order.length ? '<div style="font-weight:700;margin:12px 0 4px;">BUY (rough)</div>' + order.map(id=>{
-    const rec = CV.data.find(x=>x.id===id), tot = Math.round(byRec[id]*100)/100;
-    return `<div class="sum-row"><span>${escH(rec.name)}</span><span>${cvNum(tot)} → ${Math.ceil(tot)} Ltr</span></div>`;
-  }).join('') : '';
+  cvBuyList = order.map(id=>{ const rec = CV.data.find(x=>x.id===id), tot = Math.round(byRec[id]*100)/100; return { name:rec.name, unit:rec.unit||'Ltr', tot, buy:Math.ceil(tot) }; });
+  buy.innerHTML = cvBuyList.length ? '<div style="font-weight:700;margin:12px 0 4px;">BUY (rough)</div>' + cvBuyList.map(b=>
+    `<div class="sum-row"><span>${escH(b.name)}</span><span>${cvNum(b.tot)} → ${b.buy} ${b.unit}</span></div>`).join('') +
+    '<button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="cvCopy()">📋 Copy to WhatsApp</button>' : '';
+}
+function cvCopyText(){
+  const q = quotes.find(x=>x.id===cvQuoteId); if(!q || !cvBuyList.length) return '';
+  const L = ['*Material Required (rough)*', '*'+q.custName+'*'];
+  cvRows.forEach(r=>{ if(r.sqft>0) L.push(r.name + ' ' + cvNum(r.sqft) + ' sqft' + (r.rough ? ' (rough)' : '')); });
+  L.push('');
+  cvBuyList.forEach(b=>L.push(b.name + ' - ' + b.buy + ' ' + b.unit));
+  return L.join('\n');
+}
+function cvCopy(){
+  const text = cvCopyText(); if(!text){ toast('Nothing to copy'); return; }
+  copyText(text);
 }
 function cvWasteChange(){
   const v = parseFloat(document.getElementById('cvWaste').value);
@@ -3560,26 +3599,28 @@ function cvOpenForm(id){                  // Add / Edit in a centered pop-up
     <h3 style="text-align:center;">${r ? 'Edit Coverage' : 'Add Coverage'}</h3>
     <div class="field"><label>Type of work</label><input type="text" id="cvName" placeholder="e.g. Exterior Emulsion" autocomplete="off"></div>
     <div class="row2">
-      <div class="field"><label>Coverage per litre (sqft)</label><input type="number" id="cvCov" placeholder="100" inputmode="decimal" step="any"></div>
+      <div class="field"><label>Coverage per unit (sqft)</label><input type="number" id="cvCov" placeholder="100" inputmode="decimal" step="any"></div>
       <div class="field"><label>Typical coats</label><input type="number" id="cvCoats" placeholder="2" inputmode="decimal" step="any"></div>
     </div>
+    <div class="field"><label>Unit</label><select id="cvUnit"><option value="Ltr">Ltr</option><option value="Kg">Kg</option></select></div>
     <div class="footer-actions" style="justify-content:center;margin-top:6px;">
       <button class="btn btn-teal" onclick="cvSave()">💾 Save</button>
       <button class="btn btn-outline" onclick="cvCloseForm()">Cancel</button>
     </div></div>`;
   document.body.appendChild(d);
-  if(r){ document.getElementById('cvName').value = r.name; document.getElementById('cvCov').value = r.cov; document.getElementById('cvCoats').value = r.coats; }
+  if(r){ document.getElementById('cvName').value = r.name; document.getElementById('cvCov').value = r.cov; document.getElementById('cvCoats').value = r.coats; document.getElementById('cvUnit').value = r.unit || 'Ltr'; }
   document.getElementById('cvName').focus();
 }
 function cvCloseForm(){ const m = document.getElementById('cvModal'); if(m) m.remove(); cvEditingId = null; }
 function cvSave(){
   const name = document.getElementById('cvName').value.trim();
   const cov = parseFloat(document.getElementById('cvCov').value)||0, coats = parseFloat(document.getElementById('cvCoats').value)||0;
+  const unit = document.getElementById('cvUnit').value;
   if(!name){ toast('Enter the type of work'); return; }
-  if(!(cov>0)){ toast('Enter coverage per litre'); return; }
+  if(!(cov>0)){ toast('Enter coverage per unit'); return; }
   if(!(coats>0)){ toast('Enter the typical coats'); return; }
-  if(cvEditingId){ const id = cvEditingId; CV.data = CV.data.map(r=>r.id===id ? Object.assign({}, r, {name, cov, coats}) : r); }
-  else CV.data.push({ id: Date.now(), name, cov, coats });
+  if(cvEditingId){ const id = cvEditingId; CV.data = CV.data.map(r=>r.id===id ? Object.assign({}, r, {name, cov, coats, unit}) : r); }
+  else CV.data.push({ id: Date.now(), name, cov, coats, unit });
   cvSaveAll();
   cvCloseForm();
   cvListRender();
@@ -3607,10 +3648,10 @@ function cvCloseList(){ cvCloseForm(); showOnly('view-coverage'); cvRender(); wi
 function cvListRender(){
   cvSumRender();
   document.getElementById('cvList').innerHTML = `<table class="cv-table">
-    <tr><th>Type of work</th><th class="num">Cov/ltr</th><th class="num">Coats</th><th></th></tr>` + CV.data.map(r=>`
+    <tr><th>Type of work</th><th class="num">Coverage</th><th class="num">Coats</th><th></th></tr>` + CV.data.map(r=>`
     <tr>
       <td>${escH(r.name)}</td>
-      <td class="num">${cvNum(r.cov)}</td>
+      <td class="num">${cvNum(r.cov)} /${r.unit||'Ltr'}</td>
       <td class="num">${cvNum(r.coats)}</td>
       <td class="act">
         <button class="btn btn-outline btn-sm" onclick="cvEdit(${r.id})">✎</button>
@@ -3652,13 +3693,7 @@ function customerStatementText(){
 }
 function copyCustomerStatement(){
   if(!acctData()){ toast('Quotation not found'); return; }
-  const text = customerStatementText();
-  const done = ()=>toast('Copied! Paste it in WhatsApp');
-  navigator.clipboard.writeText(text).then(done).catch(()=>{
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta); done();
-  });
+  copyText(customerStatementText());
 }
 function acctPdf(mode){
   const d = acctData();
