@@ -3677,6 +3677,7 @@ function acctData(){
   const recT = sum(rec,e=>e.amount), matT = mc.paid, labT = sum(lab,e=>e.total), dsc = sum(rec,e=>e.discount||0);
   return {q, rec, recPaid:rec.filter(e=>e.amount>0), mat, lab, mc, mp, aw, awT, dsc, recT, matT, labT, bal:q.netAmount+awT-dsc-recT, net:Math.round((recT-labT-(mc.bills-mc.disc))*100)/100};
 }
+const SIGN_OFF = ['With Regards,', 'A.S.M Agencies', '94432 62945'];     // end of the Customer Copy PDF
 const THANK_YOU = [
   'Thank you for giving us the opportunity to serve you. We trust the completed work has met your expectations.',
   'If you are satisfied with our service, we would be grateful if you would refer us to your family and friends. Your support is truly valued.'
@@ -3799,6 +3800,11 @@ function acctPdf(mode){
     y += 16; ensure(90);
     doc.setFont('helvetica','normal'); doc.setFontSize(9);
     THANK_YOU.forEach(p=>{ const ls = doc.splitTextToSize(p, 515); ls.forEach(l=>{ doc.text(l, mx, y); y += 12; }); y += 6; });
+  }
+  if(!full){                                // sign-off, one line at a time (before and after Completed)
+    y += 14; ensure(60);
+    doc.setFontSize(10);
+    SIGN_OFF.forEach((t,i)=>{ doc.setFont('helvetica', i===1 ? 'bold' : 'normal'); doc.text(t, mx, y); y += 14; });
   }
   showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
 }
