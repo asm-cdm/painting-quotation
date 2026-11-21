@@ -3806,6 +3806,28 @@ function acctPdf(mode){
     doc.setFontSize(10);
     SIGN_OFF.forEach((t,i)=>{ doc.setFont('helvetica', i===1 ? 'bold' : 'normal'); doc.text(t, mx, y); y += 14; });
   }
+  if(!full && d.q.completedAt){             // completed job: colour details on the next page (Place, Colour Code, Colour Name, Variant)
+    const cl = CL.data.filter(e=>e.quoteId===d.q.id);
+    if(cl.length){
+      doc.addPage(); y = 50;
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('Colour Details', mx, y); y += 20;
+      doc.setFontSize(11); doc.text(d.q.custName, mx, y); y += 22;
+      const cx = [mx, mx+130, mx+235, mx+395], cw = [120, 95, 150, 120];
+      const head = () => {
+        doc.setFont('helvetica','bold'); doc.setFontSize(10);
+        ['Place','Colour Code','Colour Name','Variant'].forEach((h,i)=>doc.text(h, cx[i], y));
+        y += 5; doc.setLineWidth(0.5); doc.line(mx, y, 555, y); y += 14; doc.setFont('helvetica','normal');
+      };
+      head();
+      cl.forEach(e=>{
+        const cells = [e.place, e.code||'-', e.name||'-', e.variant||'-'].map((t,i)=>doc.splitTextToSize(String(t), cw[i]));
+        const h = Math.max(...cells.map(c=>c.length))*13 + 6;
+        if(y + h > ph - 40){ doc.addPage(); y = 50; head(); }
+        cells.forEach((c,i)=>doc.text(c, cx[i], y));
+        y += h; doc.setDrawColor(220); doc.line(mx, y-10, 555, y-10); doc.setDrawColor(0);
+      });
+    }
+  }
   showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
 }
 
