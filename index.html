@@ -2626,12 +2626,14 @@ function renderLabourSummary(){
   const rec = sum(lbScoped('rec')), mc = matCalc(currentLabourQuoteId);
   const lab = labourEntries.filter(e=>e.quoteId===currentLabourQuoteId).reduce((s,e)=>s+e.total,0);
   const aw = awTotal(currentLabourQuoteId), dsc = recDiscTotal(currentLabourQuoteId);
-  const bal = q.netAmount + aw - dsc - rec, net = rec - lab - mc.paid;
+  const matNet = Math.round((mc.bills - mc.disc)*100)/100;
+  const bal = q.netAmount + aw - dsc - rec, net = Math.round((rec - lab - matNet)*100)/100;
   const row = (l,v,cls) => `<div class="sum-row ${cls||''}"><span>${l}</span><span>₹${v.toFixed(2)}</span></div>`;
-  el.innerHTML = '<h3>Account Summary</h3>' + row('Quotation amount', q.netAmount) + (aw>0 ? row('Additional works', aw) + row('Total amount', q.netAmount + aw) : '') + (dsc>0 ? row('Discount', dsc) : '') + row('Received so far', rec) +
-    row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) + row('Materials paid', mc.paid) +
-    (mc.disc>0 ? row('Materials discount', mc.disc) : '') + row('Materials unpaid', mc.unpaid) +
-    row('Net (received − labour − materials paid)', net, 'big');
+  el.innerHTML = '<h3>Account Summary</h3>' + row('Quotation amount', q.netAmount) + (aw>0 ? row('Additional works', aw) + row('Total amount', q.netAmount + aw) : '') + (dsc>0 ? row('Discount (customer)', dsc) : '') + row('Received so far', rec) +
+    row('Balance to receive', bal, 'big') + row('Labour total', lab) + row('Materials bills total', mc.bills) +
+    (mc.disc>0 ? row('Less: material discount', mc.disc) : '') + row('Material net', matNet) +
+    row('Materials paid', mc.paid) + row('Materials unpaid', mc.unpaid) +
+    row('Net (received − labour − material net)', net, 'big');
   accRefresh(lab, bal, mc.unpaid, rec, aw, rec - (lab + mc.bills));   // reminder only: received - (labour + all material bills)
   cmpRender();
 }
@@ -3673,8 +3675,12 @@ function acctData(){
   const mc = matCalc(currentLabourQuoteId), mp = mpTimeline(currentLabourQuoteId);
   const aw = awScoped().sort(asc), awT = sum(aw,e=>e.amount);
   const recT = sum(rec,e=>e.amount), matT = mc.paid, labT = sum(lab,e=>e.total), dsc = sum(rec,e=>e.discount||0);
-  return {q, rec, recPaid:rec.filter(e=>e.amount>0), mat, lab, mc, mp, aw, awT, dsc, recT, matT, labT, bal:q.netAmount+awT-dsc-recT, net:recT-labT-matT};
+  return {q, rec, recPaid:rec.filter(e=>e.amount>0), mat, lab, mc, mp, aw, awT, dsc, recT, matT, labT, bal:q.netAmount+awT-dsc-recT, net:Math.round((recT-labT-(mc.bills-mc.disc))*100)/100};
 }
+const THANK_YOU = [
+  'Thank you for giving us the opportunity to serve you. We trust the completed work has met your expectations.',
+  'If you are satisfied with our service, we would be grateful if you would refer us to your family and friends. Your support is truly valued.'
+];
 function customerStatementText(){
   const d = acctData();
   const L = ['*Payment Statement*', '*'+d.q.custName+'*'];
@@ -3691,6 +3697,7 @@ function customerStatementText(){
     L.push('', 'Total Received: Rs.'+d.recT.toFixed(2), '');
   }
   L.push('*Balance to receive: Rs.'+d.bal.toFixed(2)+'*');
+  if(d.q.completedAt) THANK_YOU.forEach(p=>L.push('', p));
   return L.join('\n');
 }
 function copyCustomerStatement(){
@@ -3787,6 +3794,11 @@ function acctPdf(mode){
     ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(12);
     doc.text('Net Total Amount', mx, y);
     doc.text((net<0?'-':'')+'Rs.'+Math.abs(net).toFixed(2)+(net>0?'  (Profit)':net<0?'  (Loss)':''), 555, y, {align:'right'}); y += 18;
+  }
+  if(!full && d.q.completedAt){             // completed job: short thank-you at the bottom of the customer copy
+    y += 16; ensure(90);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    THANK_YOU.forEach(p=>{ const ls = doc.splitTextToSize(p, 515); ls.forEach(l=>{ doc.text(l, mx, y); y += 12; }); y += 6; });
   }
   showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
 }
