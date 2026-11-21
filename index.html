@@ -2634,7 +2634,7 @@ function renderLabourSummary(){
     (mc.disc>0 ? row('Less: material discount', mc.disc) : '') + row('Material net', matNet) +
     row('Materials paid', mc.paid) + row('Materials unpaid', mc.unpaid) +
     row('Net (received − labour − material net)', net, 'big');
-  accRefresh(lab, bal, mc.unpaid, rec, aw, rec - (lab + mc.bills));   // reminder only: received - (labour + all material bills)
+  accRefresh(lab, bal, mc.unpaid, rec, aw, net);   // blue / red value = the Net row: received - labour - material net (bills - discount)
   cmpRender();
 }
 
