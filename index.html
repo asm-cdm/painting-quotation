@@ -1501,7 +1501,7 @@ function previewPdf(){
   doc.text(profile.company, marginX, y); y += 14;
   doc.text(profile.cell, marginX, y);
 
-  showViewerBar(doc, 'Quotation_'+quoteRef(q)+'_'+qd(q)+'.pdf');
+  showViewerBar(doc, quoteRef(q)+'_Quotation_'+qd(q)+'.pdf');
 }
 
 /* ---------------- WhatsApp text (no header/footer, no site area) ---------------- */
@@ -2265,7 +2265,7 @@ function labourPreviewPdf(){
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
   doc.text('Total Amount: Rs.'+e.total.toFixed(2), marginX, y);
 
-  showViewerBar(doc, 'Labour_'+quoteRef(q||{custName:'Customer'})+'_'+formatDate(e.date)+'.pdf');
+  showViewerBar(doc, quoteRef(q||{custName:'Customer'})+'_Labour_'+formatDate(e.date)+'.pdf');
 }
 
 
@@ -2854,7 +2854,7 @@ function clPdf(){
     y += h;
     doc.setDrawColor(220); doc.line(mx, y-10, 555, y-10); doc.setDrawColor(0);
   });
-  showViewerBar(doc, 'ColourDetails_'+quoteRef(q)+'_'+qd(q)+'.pdf');
+  showViewerBar(doc, quoteRef(q)+'_Colour-Details_'+todayDMY()+'.pdf');
 }
 
 /* ---------------- Materials List module (Create / Edit / Delete + View/PDF only; pack size x nos = total, no money) ---------------- */
@@ -3100,7 +3100,7 @@ function mtPdf(){
     if(m.parts.length>1 || m.breakup){ doc.setFontSize(8); doc.text('('+m.parts.join(' + ')+')', 555, y, {align:'right'}); doc.setFontSize(10); }
     y += lines.length*13 + 4;
   });
-  showViewerBar(doc, 'Materials_'+quoteRef(q)+'_'+qd(q)+'.pdf');
+  showViewerBar(doc, quoteRef(q)+'_Materials_'+todayDMY()+'.pdf');
 }
 
 
@@ -3740,6 +3740,7 @@ function acctPdf(mode){
     doc.setFont('helvetica','normal'); doc.setFontSize(10);
   }
   doc.text('Quotation date: '+qd(d.q), mx, y); y += 20;
+  if(full){ doc.setFont('helvetica','bold'); doc.text('Status: '+(d.q.completedAt ? 'Completed '+formatDate(d.q.completedAt) : 'Running'), mx, y-6); y += 12; doc.setFont('helvetica','normal'); }
 
   if(!full){
     line('Quotation amount', d.q.netAmount);
@@ -3778,6 +3779,9 @@ function acctPdf(mode){
       d.mp.map(e=>[formatDate(e.date), e.mode, 'Rs.'+e.paid.toFixed(2), 'Rs.'+e.discount.toFixed(2), 'Rs.'+e.after.toFixed(2)]));
     if(d.mp.length){ total('Payments Total', d.mc.payPaid); if(d.mc.disc>0) total('Discount', d.mc.disc); }
 
+    const used = mtConsolidate(MT.data.filter(e=>e.quoteId===d.q.id));
+    table('Materials Used (Quantities)', ['Material','Quantity'], [mx, mx+300], used.map(m=>[m.name, fmtQty(m.total)+' '+m.unit]));
+
     // ---- Profit & Loss account ----
     ensure(190); y += 4;
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('PROFIT & LOSS ACCOUNT', mx, y); y += 6;
@@ -3795,6 +3799,12 @@ function acctPdf(mode){
     ensure(24); doc.setFont('helvetica','bold'); doc.setFontSize(12);
     doc.text('Net Total Amount', mx, y);
     doc.text((net<0?'-':'')+'Rs.'+Math.abs(net).toFixed(2)+(net>0?'  (Profit)':net<0?'  (Loss)':''), 555, y, {align:'right'}); y += 18;
+    const base = d.q.netAmount + d.awT - d.dsc;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    if(base>0){ ensure(16); doc.text('Net as % of total after discount', mx, y); doc.text((Math.round(net/base*1000)/10).toFixed(1)+'%', 555, y, {align:'right'}); y += 20; }
+    ensure(60); doc.setFont('helvetica','bold'); doc.text('SETTLEMENT CHECK', mx, y); y += 14; doc.setFont('helvetica','normal');
+    const chk = (label, v) => { ensure(16); doc.text(label, mx, y); doc.text('Rs.'+v.toFixed(2)+'  '+(Math.abs(v)<0.005 ? '(Tallied)' : '(Pending)'), 555, y, {align:'right'}); y += 15; };
+    chk('Customer balance', d.bal); chk('Materials unpaid', d.mc.unpaid);
   }
   if(!full && d.q.completedAt){             // completed job: short thank-you at the bottom of the customer copy
     y += 16; ensure(90);
@@ -3828,7 +3838,7 @@ function acctPdf(mode){
       });
     }
   }
-  showViewerBar(doc, (full ? 'AccountStatement-Internal_' : 'PaymentStatement_')+quoteRef(d.q)+'_'+qd(d.q)+'.pdf');
+  showViewerBar(doc, quoteRef(d.q)+(full ? '_Full-Account-ME_' : '_Customer-Copy_')+todayDMY()+'.pdf');
 }
 
 /* ---------------- Lump Sum / Only Labour heading box (module) ---------------- */
