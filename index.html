@@ -3683,7 +3683,10 @@ function acctData(){
   const recT = sum(rec,e=>e.amount), matT = mc.paid, labT = sum(lab,e=>e.total), dsc = sum(rec,e=>e.discount||0);
   return {q, rec, recPaid:rec.filter(e=>e.amount>0), mat, lab, mc, mp, aw, awT, dsc, recT, matT, labT, bal:q.netAmount+awT-dsc-recT, net:Math.round((recT-labT-(mc.bills-mc.disc))*100)/100};
 }
-const SIGN_OFF = ['With Regards,', 'A.S.M Agencies', '94432 62945'];     // end of the Customer Copy PDF
+function signOffLines(){                  // end of the Customer Copy PDF: from the Profile tab (empty fields are left out)
+  const p = profile || {};
+  return ['With Regards,', p.name, p.company, p.cell].map(t=>String(t||'').trim()).filter(Boolean);
+}
 const THANK_YOU = [
   'Thank you for giving us the opportunity to serve you. We trust the completed work has met your expectations.',
   'If you are satisfied with our service, we would be grateful if you would refer us to your family and friends. Your support is truly valued.'
@@ -3820,7 +3823,9 @@ function acctPdf(mode){
   if(!full){                                // sign-off, one line at a time (before and after Completed)
     y += 14; ensure(60);
     doc.setFontSize(10);
-    SIGN_OFF.forEach((t,i)=>{ doc.setFont('helvetica', i===1 ? 'bold' : 'normal'); doc.text(t, mx, y); y += 14; });
+    const so = signOffLines();
+    ensure(so.length*14 + 4);
+    so.forEach((t,i)=>{ doc.setFont('helvetica', i===1 ? 'bold' : 'normal'); doc.text(t, mx, y); y += 14; });
   }
   if(!full && d.q.completedAt){             // completed job: colour details on the next page (Place, Colour Code, Colour Name, Variant)
     const cl = CL.data.filter(e=>e.quoteId===d.q.id);
