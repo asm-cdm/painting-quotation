@@ -1752,9 +1752,12 @@ function closeViewer(){
 /* ---------------- Saved screen tabs + search (module) ---------------- */
 let svTab = (function(){ try{ const v = localStorage.getItem('bs_savedtab'); return (v==='fin'||v==='done') ? v : 'quotes'; }catch(e){ return 'quotes'; } })();
 let svQuery = '';
-function svSetTab(t){ svTab = t; try{ localStorage.setItem('bs_savedtab', t); }catch(e){} renderSavedList(); }
-function svSearchInput(){ svQuery = document.getElementById('svSearch').value; renderSavedList(); }
-function svSearchClear(){ svQuery = ''; document.getElementById('svSearch').value = ''; renderSavedList(); }
+let svOpen = null;                        // null = automatic (open while searching), true / false = chosen with the line or Close
+function svIsOpen(){ return svOpen===null ? svQuery.trim()!=='' : svOpen; }
+function svToggle(){ svOpen = !svIsOpen(); renderSavedList(); }
+function svSetTab(t){ svTab = t; svOpen = null; try{ localStorage.setItem('bs_savedtab', t); }catch(e){} renderSavedList(); }
+function svSearchInput(){ svQuery = document.getElementById('svSearch').value; svOpen = null; renderSavedList(); }
+function svSearchClear(){ svQuery = ''; svOpen = null; document.getElementById('svSearch').value = ''; renderSavedList(); }
 function svTabOf(u){ return !u.finAt ? 'quotes' : ((u.shown[0] && u.shown[0].completedAt) ? 'done' : 'fin'); }
 function svMatch(u){                      // name, phone or street (address); any quotation of the customer
   const qy = svQuery.trim().toLowerCase(); if(!qy) return true;
@@ -1821,8 +1824,11 @@ function renderSavedList(){
     </div>`; };
   const unitHtml = (u, n) => u.multi ? multi(u, n) : single(u, n);
   const shownUnits = (svTab==='quotes' ? drafts : fin.filter(u=>svTabOf(u)===svTab)).filter(svMatch);
-  el.innerHTML = shownUnits.length ? shownUnits.map(u=>unitHtml(u, numOf.get(u.key)||0)).join('')
+  const listHtml = shownUnits.length ? shownUnits.map(u=>unitHtml(u, numOf.get(u.key)||0)).join('')
     : `<div class="empty" style="padding:14px;">${svQuery.trim() ? 'No match in this tab.' : (svTab==='quotes' ? 'No pending quotations.' : svTab==='fin' ? 'No running (finalised) jobs.' : 'No completed jobs yet.')}</div>`;
+  const open = svIsOpen(), head = {quotes:'📝 Quotations', fin:'✓ Finalised', done:'✔ Completed'}[svTab];
+  el.innerHTML = `<div class="acc-line ${open?'open':''}" onclick="svToggle()"><span>${head}</span><span class="acc-val">(${shownUnits.length})</span><span class="acc-arr">${open?'▾':'▸'}</span></div>`
+    + (open ? `<div>${listHtml}</div><button class="btn btn-outline btn-block no-print" style="margin-top:8px;" onclick="svToggle()">✕ Close</button>` : '');
   if(pickKey) pickRefresh();
 }
 
